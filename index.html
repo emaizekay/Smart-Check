@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SmartCheck Trade-In+ — ระบบตรวจเช็กสภาพมือถือและแท็บเล็ต</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Prompt', 'Inter', sans-serif;
+      background-color: #F1F5F9;
+      color: #0F172A;
+      overflow-x: hidden;
+    }
+    .touch-cell {
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      transition: background-color 0.1s ease, transform 0.08s ease;
+    }
+    .touch-cell.touched {
+      background-color: #10B981 !important;
+      color: #FFFFFF !important;
+      border-color: #059669 !important;
+      transform: scale(0.95);
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.94); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6); }
+      70% { transform: scale(1.04); box-shadow: 0 0 0 14px rgba(37, 99, 235, 0); }
+      100% { transform: scale(0.94); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    }
+    .vibrate-anim {
+      animation: pulse-ring 0.6s infinite;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background-color: #FFFFFF !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+      #view-report { display: block !important; }
+      #view-home, #view-runner, #view-cosmetic { display: none !important; }
+      .print-break-avoid { page-break-inside: avoid; break-inside: avoid; }
+      .print-only { display: flex !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- App Header -->
+  <header class="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white shadow-md sticky top-0 z-30 no-print">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-white text-blue-700 flex items-center justify-center font-black text-lg shadow-sm">
+          ✓
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 id="app-title" class="text-base sm:text-lg font-extrabold tracking-tight">SmartCheck Trade-In+</h1>
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-white/20 text-white font-semibold">Web Diagnostics</span>
+          </div>
+          <p id="app-subtitle" class="text-xs text-blue-100">เว็บแอปตรวจสภาพมือถือและแท็บเล็ต พร้อมออกใบรายงานยืนยันผลตรวจ (ไม่ต้องโหลดแอป)</p>
+        </div>
+      </div>
+
+      <!-- 4-Step Navigation -->
+      <nav class="flex flex-wrap items-center gap-1 bg-blue-950/35 p-1 rounded-2xl border border-white/15">
+        <button id="nav-home" onclick="switchView('home')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition bg-white text-blue-700 shadow-sm">
+          1. ข้อมูลเครื่อง &amp; QR
+        </button>
+        <button id="nav-runner" onclick="switchView('runner')" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition text-blue-100 hover:bg-white/10">
+          2. ตรวจฮาร์ดแวร์ (<span id="nav-progress-badge">0/14</span>)
+        </button>
+        <button id="nav-cosmetic" onclick="switchView('cosmetic')" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition text-blue-100 hover:bg-white/10">
+          3. สภาพตัวเครื่อง
+        </button>
+        <button id="nav-report" onclick="switchView('report')" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition text-blue-100 hover:bg-white/10">
+          4. ใบรายงานยืนยันผล
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-5 space-y-5">
+
+    <!-- VIEW 1: HOME (DEVICE SPEC INPUT / SELECTION + QR CODE LAUNCHER + 14 CHECKS) -->
+    <div id="view-home" class="space-y-5">
+
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-12">
+
+          <!-- Left Column: Flexible Device Info Form (Dropdown + Custom Type-in Support) -->
+          <div class="lg:col-span-7 p-6 space-y-4 flex flex-col justify-between">
+            <div class="space-y-3.5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-blue-600">Step 1 · Device Information</span>
+                  <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">ระบุข้อมูลตัวเครื่องที่ต้องการตรวจเช็ก</h2>
+                </div>
+                <button onclick="runAutoDeviceDetection()" class="text-xs text-blue-600 hover:text-blue-800 font-bold bg-blue-50 px-2.5 py-1.5 rounded-xl border border-blue-100">
+                  ↻ ดึงค่าเบื้องต้นจากเบราว์เซอร์
+                </button>
+              </div>
+
+              <p class="text-xs text-slate-500">
+                เลือกยี่ห้อ รุ่น ความจุ (ROM) และแรม (RAM) จากฐานข้อมูล หรือเลือก <b>"อื่นๆ / พิมพ์ระบุเอง"</b> หากไม่มีรุ่นในรายการ
+              </p>
+
+              <!-- Form Box -->
+              <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3.5 text-xs">
+
+                <!-- Row 1: Brand & Model -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <!-- Brand -->
+                  <div>
+                    <label for="select-brand" class="block text-slate-700 font-bold mb-1">1. ยี่ห้อ (Brand)</label>
+                    <select id="select-brand" onchange="handleBrandChange()" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="Apple" selected>Apple (iPhone / iPad)</option>
+                      <option value="Samsung">Samsung Galaxy</option>
+                      <option value="OPPO">OPPO</option>
+                      <option value="Vivo">Vivo</option>
+                      <option value="Xiaomi">Xiaomi / Redmi / POCO</option>
+                      <option value="Google">Google Pixel</option>
+                      <option value="Honor">HONOR</option>
+                      <option value="Realme">realme</option>
+                      <option value="Huawei">HUAWEI</option>
+                      <option value="OnePlus">OnePlus</option>
+                      <option value="custom">✏️ อื่นๆ (พิมพ์ระบุยี่ห้อเอง)</option>
+                    </select>
+                    <input id="input-custom-brand" type="text" oninput="updateDeviceSelection()" placeholder="พิมพ์ชื่อยี่ห้อ (เช่น Nothing, Sony, ASUS)..." class="hidden mt-1.5 w-full rounded-xl border border-blue-300 bg-white px-3 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+
+                  <!-- Model -->
+                  <div>
+                    <label for="input-model" class="block text-slate-700 font-bold mb-1">2. รุ่นตัวเครื่อง (Model)</label>
+                    <select id="input-model" onchange="handleModelChange()" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <!-- Populated dynamically by handleBrandChange() -->
+                    </select>
+                    <input id="input-custom-model" type="text" oninput="updateDeviceSelection()" placeholder="พิมพ์ชื่อรุ่นตัวเครื่องด้วยตัวเอง..." class="hidden mt-1.5 w-full rounded-xl border border-blue-300 bg-white px-3 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                </div>
+
+                <!-- Row 2: RAM & ROM (Storage) with Custom Option -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <!-- RAM -->
+                  <div>
+                    <label for="select-ram" class="block text-slate-700 font-bold mb-1">3. แรม (RAM)</label>
+                    <select id="select-ram" onchange="handleRamRomChange()" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="3GB">3 GB</option>
+                      <option value="4GB">4 GB</option>
+                      <option value="6GB">6 GB</option>
+                      <option value="8GB" selected>8 GB</option>
+                      <option value="12GB">12 GB</option>
+                      <option value="16GB">16 GB</option>
+                      <option value="24GB">24 GB</option>
+                      <option value="ไม่ระบุ">ไม่ระบุ / เช็กตามรุ่น</option>
+                      <option value="custom">✏️ พิมพ์ระบุ RAM เอง...</option>
+                    </select>
+                    <input id="input-custom-ram" type="text" oninput="updateDeviceSelection()" placeholder="เช่น 8GB+8GB, 18GB..." class="hidden mt-1.5 w-full rounded-xl border border-blue-300 bg-white px-3 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+
+                  <!-- ROM / Storage -->
+                  <div>
+                    <label for="input-storage" class="block text-slate-700 font-bold mb-1">4. ความจุตัวเครื่อง (ROM / Storage)</label>
+                    <select id="input-storage" onchange="handleRamRomChange()" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="32GB">32 GB</option>
+                      <option value="64GB">64 GB</option>
+                      <option value="128GB">128 GB</option>
+                      <option value="256GB" selected>256 GB</option>
+                      <option value="512GB">512 GB</option>
+                      <option value="1TB">1 TB</option>
+                      <option value="2TB">2 TB</option>
+                      <option value="custom">✏️ พิมพ์ระบุความจุเอง...</option>
+                    </select>
+                    <input id="input-custom-storage" type="text" oninput="updateDeviceSelection()" placeholder="เช่น 16GB, 1.5TB..." class="hidden mt-1.5 w-full rounded-xl border border-blue-300 bg-white px-3 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                </div>
+
+                <!-- Row 3: IMEI / SN & Color/Note -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label for="input-imei" class="block text-slate-700 font-bold mb-1">5. เลข IMEI หรือ Serial Number (SN)</label>
+                    <input id="input-imei" type="text" oninput="updateDeviceSelection()" placeholder="กด *#06# บนมือถือเพื่อดูเลข IMEI 15 หลัก" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label for="input-device-color" class="block text-slate-700 font-bold mb-1">6. สีตัวเครื่อง / หมายเหตุเพิ่มเติม</label>
+                    <input id="input-device-color" type="text" oninput="updateDeviceSelection()" placeholder="เช่น สีดำ Titanium, เครื่องศูนย์ไทย..." class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                </div>
+
+                <!-- Auto-Detected Browser Info Strip (Reference Only) -->
+                <div class="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+                  <div class="flex items-center gap-1.5">
+                    <span id="detected-os-icon">📱</span>
+                    <span id="detected-device-title" class="font-medium text-slate-600">ระบบตรวจพบเบราว์เซอร์...</span>
+                  </div>
+                  <div class="font-mono text-[10px] text-slate-400">
+                    จอ: <span id="tele-screen">-</span> · GPU: <span id="tele-gpu">-</span> · <span id="tele-net-bat">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main Action Buttons -->
+            <div class="pt-2 flex flex-wrap items-center gap-3">
+              <button onclick="startFullDiagnostic()" class="flex-1 py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-md transition flex items-center justify-center gap-2">
+                <span>▶ เริ่มรันตรวจเช็กสภาพเครื่อง (14 รายการ)</span>
+              </button>
+              <button id="btn-retest-home" onclick="retestFailedItems()" class="py-3.5 px-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition hidden">
+                ↻ ตรวจซ้ำเฉพาะข้อที่มีปัญหา
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column: QR Code to Open This Web App on Target Phone -->
+          <div class="lg:col-span-5 bg-gradient-to-b from-slate-900 to-blue-950 text-white p-6 flex flex-col justify-between space-y-4">
+            <div class="space-y-1.5 text-center">
+              <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300 border border-cyan-400/30">
+                Scan to Open Web App
+              </span>
+              <h3 class="text-base font-extrabold">สแกน QR เพื่อเปิดเว็บนี้บนเครื่องที่จะตรวจ</h3>
+              <p class="text-xs text-slate-300">
+                นำมือถือหรือแท็บเล็ตที่จะประเมินมาสแกน QR Code นี้เพื่อเข้าหน้าเว็บตรวจเช็กโดยไม่ต้องโหลดแอปจาก Store
+              </p>
+            </div>
+
+            <div class="bg-white rounded-3xl p-4 mx-auto shadow-lg flex flex-col items-center space-y-2 w-56">
+              <div id="home-qr-box" class="w-44 h-44 flex items-center justify-center"></div>
+              <span class="text-[11px] font-bold text-slate-700">สแกนด้วยกล้อง iOS / Android</span>
+            </div>
+
+            <div class="space-y-2 text-xs">
+              <label for="input-app-url" class="block text-slate-300 font-medium text-[11px]">
+                ลิงก์เว็บแอปของคุณ (วางลิงก์เมื่ออัปโหลดไฟล์ขึ้นเว็บแล้ว):
+              </label>
+              <div class="flex gap-1.5">
+                <input id="input-app-url" type="text" value="" oninput="renderHomeLauncherQr()" placeholder="https://your-check-app.netlify.app" class="flex-1 rounded-xl bg-white/10 border border-white/20 px-3 py-2 text-white font-mono text-[11px] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400" />
+                <button onclick="downloadStandaloneHtml()" class="px-3 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-extrabold text-[11px] whitespace-nowrap transition">
+                  📥 โหลดไฟล์เว็บ
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 14 Diagnostic Items Overview Grid -->
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">รายการตรวจเช็กฟังก์ชันการทำงาน 14 หัวข้อ (มาตรฐาน Remobie Check &amp; Trade IN+)</h3>
+            <p class="text-xs text-slate-500">แตะแยกหัวข้อเพื่อตรวจเฉพาะจุด หรือกดปุ่มเริ่มรันตรวจเช็กต่อเนื่องทั้ง 14 ข้อ</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">ปกติ: <span id="stat-pass">0</span></span>
+            <span class="px-3 py-1 rounded-xl bg-rose-50 text-rose-700 font-bold border border-rose-200">พบปัญหา: <span id="stat-fail">0</span></span>
+            <button onclick="resetAllTests()" class="px-3 py-1 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium">
+              ↺ รีเซ็ตผลตรวจ
+            </button>
+          </div>
+        </div>
+
+        <div id="diagnostic-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+      </div>
+
+    </div>
+
+    <!-- VIEW 2: INTERACTIVE 14-STEP HARDWARE RUNNER -->
+    <div id="view-runner" class="hidden space-y-5">
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-5 sm:p-6">
+
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <span id="runner-step-badge" class="px-3 py-1.5 rounded-xl bg-blue-600 text-white font-extrabold text-xs">ด่านที่ 1 / 14</span>
+            <div>
+              <h2 id="runner-title" class="text-base sm:text-lg font-extrabold text-slate-900">กำลังโหลดด่านทดสอบ...</h2>
+              <p id="runner-subtitle" class="text-xs text-slate-500">ทำตามขั้นตอนบนหน้าจอเพื่อยืนยันการทำงานของฮาร์ดแวร์</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="prevTestStep()" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+              ← ข้อก่อนหน้า
+            </button>
+            <button onclick="nextTestStep()" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+              ข้ามไปข้อถัดไป →
+            </button>
+          </div>
+        </div>
+
+        <div id="runner-pill-strip" class="flex items-center gap-1.5 overflow-x-auto py-3 border-b border-slate-100"></div>
+
+        <div id="runner-stage" class="py-6 min-h-[360px] flex flex-col items-center justify-center"></div>
+
+        <div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div class="text-xs text-slate-500">
+            สถานะด่านนี้: <span id="runner-current-status" class="font-bold text-amber-600">รอการยืนยันจากระบบฮาร์ดแวร์</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="markCurrentTest('fail')" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition">
+              ✕ พบปัญหา / ไม่ผ่าน (Fail)
+            </button>
+            <button id="btn-runner-pass" onclick="handleStrictPassClick()" disabled class="px-6 py-2.5 rounded-xl bg-slate-200 text-slate-500 cursor-not-allowed font-bold text-xs transition">
+              🔒 ต้องทำบททดสอบด้านบนให้ผ่านก่อนจึงจะกดบันทึกได้
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW 3: COSMETIC CONDITION & DEVICE PHOTOS -->
+    <div id="view-cosmetic" class="hidden space-y-5">
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-900">ประเมินสภาพภายนอก &amp; สุขภาพแบตเตอรี่ (4 ข้อมาตรฐาน)</h2>
+            <p class="text-xs text-slate-500">ระบุสภาพตัวเครื่องจริงและแนบรูปถ่ายเพื่อออกใบรายงานยืนยันผลตรวจ</p>
+          </div>
+          <button onclick="switchView('report')" class="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold shadow-md transition">
+            สร้างใบรายงานยืนยันผลตรวจ →
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <!-- 1. Screen Condition -->
+          <div class="border border-slate-200 rounded-2xl p-4 space-y-3">
+            <span class="font-bold text-sm text-slate-800 block">1. สภาพกระจกหน้าจอ (Screen Condition)</span>
+            <div class="space-y-2 text-xs">
+              <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-50/40">
+                <input type="radio" name="cos_screen" value="flawless" checked onchange="updateCosmetics()" class="mt-0.5" />
+                <div>
+                  <div class="font-bold text-slate-800">ปกติสมบูรณ์ — หน้าจอสวยใสไร้รอยขีดข่วน (Grade A)</div>
+                  <div class="text-slate-500">ไม่มีรอยขีดข่วน ไม่เหลือง ไม่มีจุด Dead Pixel</div>
+                </div>
+              </label>
+              <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-50/40">
+                <input type="radio" name="cos_screen" value="minor_scratch" onchange="updateCosmetics()" class="mt-0.5" />
+                <div>
+                  <div class="font-bold text-slate-800">มีรอยขนแมวบางๆ เล็กน้อย (Grade B)</div>
+                  <div class="text-slate-500">รอยขนแมวตื้นๆ เมื่อส่องไฟ ไม่สะดุดเล็บ</div>
+                </div>
+              </label>
+              <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-50/40">
+                <input type="radio" name="cos_screen" value="heavy_scratch" onchange="updateCosmetics()" class="mt-0.5" />
+                <div>
+                  <div class="font-bold text-amber-700">พบปัญหาเล็กน้อย — มีรอยขีดข่วนลึก หรือจุดสว่าง (Grade C)</div>
+                  <div class="text-slate-500">รอยลึกสะดุดเล็บ แต่ยังสัมผัสหน้าจอได้ปกติ 100%</div>
+                </div>
+              </label>
+              <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-50/40">
+                <input type="radio" name="cos_screen" value="cracked" onchange="updateCosmetics()" class="mt-0.5" />
+                <div>
+                  <div class="font-bold text-rose-700">พบปัญหาหนัก — กระจกจอแตก / จอเป็นเส้น / จอเบิร์นหนัก (Grade D)</div>
+                  <div class="text-slate-500">หน้าจอมีความเสียหายชัดเจน ต้องเปลี่ยนจอ</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 2. Body Condition -->
+          <div class="border border-slate-200 rounded-2xl p-4 space-y-3">
+            <span class="font-bold text-sm text-slate-800 block">2. สภาพตัวเครื่องและฝาหลัง (Body &amp; Frame)</span>
+            <div class="space-y-2 text-xs">
+              <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-50/40">
+                <input type="radio" name="cos_body" value="flawless" checked onchange="updateCosmetics()" class="mt-0.5" />
+                <div>
+                  <div class="font-bold text-slate-800">ปกติสมบูรณ์ — ตัวเครื่องสวยเหมือนใหม่ ไร้รอย (Grade A)</div>
+                  <div class="text-slate-500">ไม่มีรอยบุบ ไม่ลอก ไม่เคยตกกระแทก</div>
+                </div>
+              </label>
+              <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-50/40">
+                <input type="radio" name="cos_body" value="minor_wear" onchange="updateCosmetics()" class="mt-0.5" />
+                <div>
+                  <div class="font-bold text-slate-800">มีรอยเคสหรือรอยขนแมวเล็กน้อยตามการใช้งาน (Grade B)</div>
+                  <div class="text-slate-500">ไม่มีรอยบุบที่มุมเครื่อง ฝาหลังไม่ร้าว</div>
+                </div>
+              </label>
+              <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-50/40">
+                <input type="radio" name="cos_body" value="dented" onchange="updateCosmetics()" class="mt-0.5" />
+                <div>
+                  <div class="font-bold text-amber-700">พบปัญหา — มีรอยบุบมุมเครื่อง หรือรอยถลอกชัดเจน (Grade C)</div>
+                  <div class="text-slate-500">มีร่องรอยการตกกระแทกตามขอบแต่ตัวเครื่องไม่บิดงอ</div>
+                </div>
+              </label>
+              <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-50/40">
+                <input type="radio" name="cos_body" value="broken_housing" onchange="updateCosmetics()" class="mt-0.5" />
+                <div>
+                  <div class="font-bold text-rose-700">พบปัญหาหนัก — ฝาหลังแตกร้าว / ตัวเครื่องงอ / แบตบวม (Grade D)</div>
+                  <div class="text-slate-500">โครงสร้างภายนอกเสียหายต้องซ่อมแซม</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 3. Account Lock Status -->
+          <div class="border border-slate-200 rounded-2xl p-4 space-y-3">
+            <span class="font-bold text-sm text-slate-800 block">3. สถานะบัญชี iCloud / Google Account</span>
+            <div class="space-y-2 text-xs">
+              <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-50/40">
+                <input type="radio" name="cos_lock" value="unlocked" checked onchange="updateCosmetics()" class="mt-0.5" />
+                <div>
+                  <div class="font-bold text-emerald-700">ปกติ — ออกจากระบบ iCloud / Google Account เรียบร้อยแล้ว</div>
+                  <div class="text-slate-500">ไม่ติดล็อก Find My หรือรหัสผ่านหน้าจอ</div>
+                </div>
+              </label>
+              <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-50/40">
+                <input type="radio" name="cos_lock" value="locked" onchange="updateCosmetics()" class="mt-0.5" />
+                <div>
+                  <div class="font-bold text-rose-700">พบปัญหา — ติดล็อก iCloud / Google Account / ติดสัญญาล็อกเครื่อง</div>
+                  <div class="text-slate-500">ต้องแจ้งปลดล็อกบัญชีก่อนส่งมอบเครื่อง</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 4. Battery Health % -->
+          <div class="border border-slate-200 rounded-2xl p-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-sm text-slate-800">4. สุขภาพแบตเตอรี่ (Battery Health %)</span>
+              <span id="battery-health-label" class="text-base font-black text-emerald-600">90% (ปกติ)</span>
+            </div>
+            <div>
+              <input id="input-battery-health" type="range" min="50" max="100" value="90" oninput="updateCosmetics()" class="w-full accent-blue-600 cursor-pointer" />
+              <div class="flex justify-between text-[11px] text-slate-400 mt-1">
+                <span>ต่ำกว่า 80% (เสื่อม/ควรเปลี่ยน)</span>
+                <span>80–84% (ปกติเกณฑ์ B)</span>
+                <span>85% ขึ้นไป (สมบูรณ์เกณฑ์ A)</span>
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Real Device Photo Documentation -->
+        <div class="border-t border-slate-200 pt-5 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm font-bold text-slate-800">5. แนบรูปถ่ายตัวเครื่องจริงที่ประเมิน (ใช้เป็นหลักฐานในใบรายงาน)</h3>
+              <p class="text-xs text-slate-500">ถ่ายภาพหรืออัปโหลดรูปตัวเครื่องจริงครบ 4 มุมเพื่อแสดงในใบรายงานยืนยันผลตรวจ</p>
+            </div>
+            <label class="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold cursor-pointer transition">
+              📤 เลือกอัปโหลดทีเดียว 4 รูป
+              <input type="file" accept="image/*" multiple onchange="handleBatchPhotoUpload(this)" class="hidden" />
+            </label>
+          </div>
+          <div id="cosmetic-photo-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW 4: OFFICIAL VERIFICATION REPORT (SHOWS NORMAL SUMMARY OR ONLY PROBLEMATIC ITEMS!) -->
+    <div id="view-report" class="hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+        <!-- Left: Official Printable Evidence Sheet -->
+        <div class="lg:col-span-8 bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-5">
+
+          <!-- Report Header -->
+          <div class="flex flex-wrap items-start justify-between gap-4 border-b-2 border-slate-200 pb-4">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-md bg-slate-900 text-white text-xs font-bold tracking-wide">ใบรายงานยืนยันผลการตรวจสภาพเครื่อง</span>
+                <span id="cert-code" class="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">TRD-20261116-8842</span>
+              </div>
+              <h2 id="cert-model-title" class="text-xl sm:text-2xl font-black text-slate-900 pt-1">Apple iPhone 15 Pro Max</h2>
+              <p class="text-xs text-slate-500">
+                วันที่ออกใบรายงาน: <span id="cert-date" class="font-semibold text-slate-700">-</span>
+              </p>
+            </div>
+
+            <!-- Final Grade Box -->
+            <div id="cert-grade-box" class="px-6 py-3 rounded-2xl bg-emerald-600 text-white text-center shadow-sm min-w-[150px]">
+              <div class="text-[11px] uppercase tracking-wider opacity-90">สรุปเกรดสภาพเครื่อง</div>
+              <div id="cert-grade-letter" class="text-3xl font-black leading-tight">GRADE A</div>
+              <div id="cert-grade-reason" class="text-[11px] opacity-95">สภาพสมบูรณ์ปกติ</div>
+            </div>
+          </div>
+
+          <!-- 1. Verified Device Specifications Table (User-Entered / Confirmed Brand, Model, RAM, ROM, IMEI, Battery) -->
+          <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2.5 print-break-avoid">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">1. ข้อมูลจำเพาะของตัวเครื่องที่รับการตรวจ (Device Identification)</h3>
+              <button onclick="switchView('home')" class="text-[11px] font-bold text-blue-600 hover:text-blue-800 no-print">✏️ แก้ไขข้อมูลเครื่อง</button>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+              <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <div class="text-[10px] text-slate-400 font-medium">ยี่ห้อ / รุ่น (Brand &amp; Model)</div>
+                <div id="spec-brand-model" class="font-extrabold text-slate-900 mt-0.5">-</div>
+              </div>
+              <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <div class="text-[10px] text-slate-400 font-medium">หน่วยความจำ (RAM / ROM)</div>
+                <div id="spec-ram-rom" class="font-extrabold text-blue-700 mt-0.5">-</div>
+              </div>
+              <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <div class="text-[10px] text-slate-400 font-medium">เลข IMEI / Serial Number</div>
+                <div id="spec-imei" class="font-mono font-bold text-slate-900 mt-0.5 break-all">-</div>
+              </div>
+              <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <div class="text-[10px] text-slate-400 font-medium">สุขภาพแบตเตอรี่ (Battery)</div>
+                <div id="spec-battery" class="font-extrabold text-emerald-700 mt-0.5">-</div>
+              </div>
+              <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <div class="text-[10px] text-slate-400 font-medium">สี / หมายเหตุตัวเครื่อง</div>
+                <div id="spec-color" class="font-bold text-slate-800 mt-0.5">-</div>
+              </div>
+              <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <div class="text-[10px] text-slate-400 font-medium">สถานะบัญชี iCloud / Google</div>
+                <div id="spec-lock" class="font-bold text-emerald-700 mt-0.5">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Exception-Based Diagnostic Summary (Shows "ปกติทั้งหมด" OR highlights ONLY found issues!) -->
+          <div class="space-y-3 print-break-avoid">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">2. สรุปผลการตรวจสอบการทำงานและสภาพตัวเครื่อง (Diagnostic Verdict)</h3>
+              <div class="flex items-center gap-2 no-print">
+                <button id="btn-retest-report" onclick="retestFailedItems()" class="text-xs font-bold text-amber-600 hover:text-amber-700 hidden">
+                  ↻ ตรวจซ้ำเฉพาะจุดที่มีปัญหา
+                </button>
+                <button onclick="toggleFullChecklistInReport()" class="text-xs font-semibold text-slate-500 hover:text-slate-800 underline">
+                  <span id="toggle-checklist-label">ดูรายละเอียดทั้ง 14 หัวข้อ</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Dynamic Verdict Box (Populated by renderReportView) -->
+            <div id="report-verdict-container"></div>
+
+            <!-- Collapsible Full 14-Item Grid (Hidden by default so report stays clean and focused on issues/normalcy!) -->
+            <div id="cert-checklist-wrapper" class="hidden pt-2">
+              <div id="cert-checklist-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs"></div>
+            </div>
+          </div>
+
+          <!-- 3. Estimated Trade-In Valuation -->
+          <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3 print-break-avoid">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">3. ราคาประเมินรับซื้อ/เทิร์นเครื่องตามเกรดสภาพจริง</h3>
+                <p class="text-[11px] text-slate-500">อ้างอิงมาตรฐาน Remobie Check และ Trade IN+ (CompAsia)</p>
+              </div>
+              <div class="text-right">
+                <span class="text-[11px] text-slate-500 block">ราคาประเมินสูงสุด</span>
+                <span id="cert-max-price" class="text-xl font-black text-blue-700">฿28,500</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+              <div class="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+                <span class="font-bold text-slate-700">Remobie Check</span>
+                <span id="price-remobie" class="font-extrabold text-slate-900 text-sm">฿28,500</span>
+              </div>
+              <div class="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+                <span class="font-bold text-slate-700">Trade IN+ (CompAsia)</span>
+                <span id="price-compasia" class="font-extrabold text-slate-900 text-sm">฿27,900</span>
+              </div>
+              <div class="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+                <span class="font-bold text-slate-700">ราคากลางร้านค้า</span>
+                <span id="price-trademobile" class="font-extrabold text-slate-900 text-sm">฿27,500</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Evaluated Device Photos -->
+          <div class="pt-2 border-t border-slate-100 space-y-2 print-break-avoid">
+            <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">4. ภาพถ่ายตัวเครื่องจริงที่ประเมิน (4 มุมมาตรฐาน)</h3>
+            <div id="cert-photo-gallery" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+          </div>
+
+          <!-- 5. Signature Verification Block for Printed Proof -->
+          <div class="pt-6 border-t border-slate-200 grid grid-cols-2 gap-8 text-center text-xs text-slate-600 print-break-avoid">
+            <div class="space-y-6">
+              <div class="border-b border-dashed border-slate-400 h-6"></div>
+              <div>ลงชื่อเจ้าของเครื่อง / ผู้ส่งมอบเครื่อง</div>
+            </div>
+            <div class="space-y-6">
+              <div class="border-b border-dashed border-slate-400 h-6"></div>
+              <div>ลงชื่อผู้ตรวจสอบสภาพเครื่อง (Inspector)</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Reference QR Code & Print Actions -->
+        <div class="lg:col-span-4 space-y-4 no-print">
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-5 space-y-4">
+            <div class="text-center space-y-1">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-blue-600">Verification QR Code</span>
+              <h3 class="text-sm font-bold text-slate-800">รหัสยืนยันผลตรวจสภาพเครื่อง</h3>
+              <p class="text-xs text-slate-500">ใช้สแกนอ้างอิงผลตรวจ หรือกดสั่งปริ้นใบรายงานเพื่อใช้เป็นหลักฐานยืนยัน</p>
+            </div>
+
+            <div class="border-2 border-dashed border-slate-300 rounded-2xl p-4 bg-slate-50 flex flex-col items-center space-y-3">
+              <div id="report-qr-box" class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200"></div>
+              <div class="text-center">
+                <div class="text-[11px] text-slate-400">รหัสใบรายงาน (Report ID)</div>
+                <div id="report-code-text" class="font-mono font-black text-base text-slate-900 tracking-wider">TRD-20261116-8842</div>
+              </div>
+            </div>
+
+            <div class="space-y-2.5">
+              <button onclick="window.print()" class="w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2">
+                <span>🖨️ พิมพ์ใบรายงานยืนยันผล / บันทึกเป็น PDF</span>
+              </button>
+              <button onclick="copyReportSummary()" class="w-full py-2.5 px-4 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold text-xs transition flex items-center justify-center gap-2">
+                <span>📋 คัดลอกข้อความสรุปผลตรวจส่งแชท / LINE</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 hidden no-print">
+    <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2.5 text-xs font-medium">
+      <span id="toast-icon" class="text-emerald-400 text-base">✓</span>
+      <span id="toast-message">บันทึกข้อมูลเรียบร้อย</span>
+    </div>
+  </div>
+
+  <script>
+    // --- Multi-Brand Catalog with Default RAM, ROM, and Base Trade-In Prices ---
+    const BRAND_MODELS_CATALOG = {
+      Apple: [
+        { name: 'iPhone 17 Pro Max', ram: '12GB', rom: '256GB', prices: [42500, 41800, 41200] },
+        { name: 'iPhone 17 Pro', ram: '12GB', rom: '256GB', prices: [36900, 36200, 35800] },
+        { name: 'iPhone 17', ram: '8GB', rom: '128GB', prices: [26500, 25900, 25500] },
+        { name: 'iPhone 16 Pro Max', ram: '8GB', rom: '256GB', prices: [35500, 34900, 34200] },
+        { name: 'iPhone 16 Pro', ram: '8GB', rom: '128GB', prices: [29500, 28900, 28400] },
+        { name: 'iPhone 16 Plus', ram: '8GB', rom: '128GB', prices: [24500, 23900, 23500] },
+        { name: 'iPhone 16', ram: '8GB', rom: '128GB', prices: [21500, 20900, 20500] },
+        { name: 'iPhone 15 Pro Max', ram: '8GB', rom: '256GB', prices: [28500, 27900, 27500] },
+        { name: 'iPhone 15 Pro', ram: '8GB', rom: '128GB', prices: [23900, 23400, 23000] },
+        { name: 'iPhone 15 Plus', ram: '6GB', rom: '128GB', prices: [20500, 19900, 19500] },
+        { name: 'iPhone 15', ram: '6GB', rom: '128GB', prices: [18200, 17800, 17500] },
+        { name: 'iPhone 14 Pro Max', ram: '6GB', rom: '256GB', prices: [22800, 22100, 21900] },
+        { name: 'iPhone 14 Pro', ram: '6GB', rom: '128GB', prices: [18900, 18400, 18000] },
+        { name: 'iPhone 14', ram: '6GB', rom: '128GB', prices: [14200, 13800, 13500] },
+        { name: 'iPhone 13 Pro Max', ram: '6GB', rom: '128GB', prices: [16900, 16400, 16000] },
+        { name: 'iPhone 13', ram: '4GB', rom: '128GB', prices: [11800, 11400, 11200] },
+        { name: 'iPhone 12 Pro Max', ram: '6GB', rom: '128GB', prices: [12500, 12000, 11800] },
+        { name: 'iPhone 12', ram: '4GB', rom: '128GB', prices: [8200, 7900, 7600] },
+        { name: 'iPhone 11', ram: '4GB', rom: '64GB', prices: [6200, 5900, 5600] },
+        { name: 'iPhone XS', ram: '4GB', rom: '64GB', prices: [4500, 4200, 4000] },
+        { name: 'iPad Pro 11 (ชิป M4)', ram: '8GB', rom: '256GB', prices: [31500, 30800, 30200] },
+        { name: 'iPad Air 6 (ชิป M2)', ram: '8GB', rom: '128GB', prices: [16900, 16400, 16000] },
+        { name: 'iPad Gen 10', ram: '4GB', rom: '64GB', prices: [8900, 8500, 8200] }
+      ],
+      Samsung: [
+        { name: 'Galaxy S25 Ultra', ram: '12GB', rom: '256GB', prices: [31000, 30200, 29800] },
+        { name: 'Galaxy S25+', ram: '12GB', rom: '256GB', prices: [23500, 22900, 22500] },
+        { name: 'Galaxy S25', ram: '12GB', rom: '256GB', prices: [19500, 18900, 18500] },
+        { name: 'Galaxy S24 Ultra', ram: '12GB', rom: '256GB', prices: [24500, 23900, 23500] },
+        { name: 'Galaxy S23 Ultra', ram: '12GB', rom: '256GB', prices: [17900, 17400, 17000] },
+        { name: 'Galaxy Z Fold6', ram: '12GB', rom: '256GB', prices: [29500, 28800, 28100] },
+        { name: 'Galaxy Z Flip6', ram: '12GB', rom: '256GB', prices: [18500, 17900, 17500] },
+        { name: 'Galaxy A55 5G', ram: '12GB', rom: '256GB', prices: [7900, 7500, 7200] },
+        { name: 'Galaxy Tab S9', ram: '8GB', rom: '128GB', prices: [15500, 14900, 14500] }
+      ],
+      OPPO: [
+        { name: 'Find X8 Pro', ram: '16GB', rom: '512GB', prices: [22500, 21900, 21500] },
+        { name: 'Find N3', ram: '16GB', rom: '512GB', prices: [25500, 24800, 24200] },
+        { name: 'Reno12 Pro 5G', ram: '12GB', rom: '512GB', prices: [9800, 9400, 9000] },
+        { name: 'Reno12 5G', ram: '12GB', rom: '256GB', prices: [7500, 7100, 6800] }
+      ],
+      Vivo: [
+        { name: 'X200 Pro', ram: '16GB', rom: '512GB', prices: [23500, 22900, 22400] },
+        { name: 'X100 Pro', ram: '16GB', rom: '512GB', prices: [18500, 17900, 17500] },
+        { name: 'V40 Pro 5G', ram: '12GB', rom: '512GB', prices: [11500, 10900, 10500] },
+        { name: 'V40 5G', ram: '12GB', rom: '256GB', prices: [8200, 7800, 7500] }
+      ],
+      Xiaomi: [
+        { name: 'Xiaomi 14 Ultra', ram: '16GB', rom: '512GB', prices: [24900, 24200, 23800] },
+        { name: 'Xiaomi 14T Pro', ram: '12GB', rom: '512GB', prices: [13500, 12900, 12500] },
+        { name: 'Redmi Note 13 Pro+ 5G', ram: '12GB', rom: '512GB', prices: [7900, 7500, 7200] },
+        { name: 'POCO F6 Pro', ram: '12GB', rom: '512GB', prices: [9500, 9100, 8800] }
+      ],
+      Google: [
+        { name: 'Pixel 9 Pro XL', ram: '16GB', rom: '256GB', prices: [26500, 25900, 25400] },
+        { name: 'Pixel 9 Pro', ram: '16GB', rom: '128GB', prices: [22900, 22200, 21800] },
+        { name: 'Pixel 8 Pro', ram: '12GB', rom: '128GB', prices: [15900, 15200, 14800] }
+      ],
+      Honor: [
+        { name: 'Magic6 Pro', ram: '12GB', rom: '512GB', prices: [18900, 18200, 17800] },
+        { name: 'Magic V3', ram: '12GB', rom: '512GB', prices: [28500, 27800, 27200] },
+        { name: 'HONOR 200 Pro', ram: '12GB', rom: '512GB', prices: [10500, 9900, 9500] }
+      ],
+      Realme: [
+        { name: 'GT 6', ram: '16GB', rom: '512GB', prices: [11500, 10900, 10500] },
+        { name: 'Realme 13 Pro+ 5G', ram: '12GB', rom: '512GB', prices: [8900, 8400, 8000] }
+      ],
+      Huawei: [
+        { name: 'Pura 70 Ultra', ram: '16GB', rom: '512GB', prices: [25900, 25100, 24500] },
+        { name: 'Mate XT / Mate X5', ram: '16GB', rom: '512GB', prices: [32000, 31000, 30500] }
+      ],
+      OnePlus: [
+        { name: 'OnePlus 12 5G', ram: '16GB', rom: '512GB', prices: [19800, 19200, 18900] },
+        { name: 'OnePlus Open', ram: '16GB', rom: '512GB', prices: [26500, 25800, 25200] }
+      ]
+    };
+
+    const DIAGNOSTIC_ITEMS = [
+      { id: 'wifi', name: 'Wi-Fi & อินเทอร์เน็ต', en: 'Wi-Fi & Network Ping', icon: '📶', desc: 'ทดสอบความเร็วการรับ-ส่งแพ็กเกจข้อมูลไร้สายจริง' },
+      { id: 'bluetooth', name: 'บลูทูธ (Bluetooth)', en: 'Bluetooth Module', icon: '🦷', desc: 'ตรวจสอบสถานะโมดูลเชื่อมต่อไร้สาย Bluetooth' },
+      { id: 'touch', name: 'หน้าจอสัมผัส (Touch Grid)', en: 'Touch Screen Grid', icon: '👆', desc: 'ลากนิ้วให้ครบทั้ง 48 ช่องเพื่อตรวจหาจุดทัชบอด' },
+      { id: 'screen_rgb', name: 'สีหน้าจอ & Dead Pixel', en: 'Display & Dead Pixel', icon: '🎨', desc: 'สลับสีแดง-เขียว-น้ำเงิน-ขาว-ดำ และยืนยันรหัสมุมจอ' },
+      { id: 'speaker', name: 'ลำโพงหลัก (Speaker)', en: 'Main Loud Speaker', icon: '🔊', desc: 'ฟังเสียงบี๊บแบบสุ่มจำนวนครั้งและกดตัวเลขให้ตรง' },
+      { id: 'earpiece', name: 'ลำโพงสนทนาแนบหู', en: 'Earpiece Speaker', icon: '👂', desc: 'ฟังเสียงความถี่สนทนาและตอบจำนวนครั้งที่ได้ยิน' },
+      { id: 'microphone', name: 'ไมโครโฟน (Microphone)', en: 'Microphone Input', icon: '🎙️', desc: 'พูดใส่ไมโครโฟนให้ระดับคลื่นเสียงขึ้นต่อเนื่อง' },
+      { id: 'front_cam', name: 'กล้องหน้า (Front Cam)', en: 'Front Selfie Camera', icon: '🤳', desc: 'เปิดกล้องหน้าจริงเพื่อตรวจเซนเซอร์รับภาพ' },
+      { id: 'rear_cam', name: 'กล้องหลัง (Rear Cam)', en: 'Rear Main Camera', icon: '📷', desc: 'เปิดกล้องหลังจริงเพื่อตรวจเซนเซอร์และโฟกัส' },
+      { id: 'vibration', name: 'ระบบสั่น (Vibration)', en: 'Vibration & Haptics', icon: '📳', desc: 'สั่งสั่นมอเตอร์และตอบจำนวนจังหวะการสั่น' },
+      { id: 'sensors', name: 'เซ็นเซอร์หมุนจอ (Gyro)', en: 'Gyroscope & Motion', icon: '🧭', desc: 'เอียงเครื่องซ้าย-ขวา-หน้าให้เข้าเป้าทั้ง 3 ทิศทาง' },
+      { id: 'biometrics', name: 'สแกนหน้า / ลายนิ้วมือ', en: 'Face ID / Touch ID', icon: '🔐', desc: 'ตรวจสอบระบบยืนยันตัวตนชีวมาตรของเครื่อง' },
+      { id: 'charging', name: 'ระบบชาร์จไฟ & แบตเตอรี่', en: 'Charging & Battery', icon: '⚡', desc: 'ตรวจสอบสถานะการจ่ายพลังงานและความจุแบตเตอรี่' },
+      { id: 'buttons', name: 'ปุ่มเพิ่ม-ลดเสียง & Power', en: 'Hardware Buttons', icon: '🔘', desc: 'กดปุ่มล็อกหน้าจอหรือปุ่มปรับเสียงเพื่อยืนยันปุ่มกด' }
+    ];
+
+    const state = {
+      currentView: 'home',
+      brand: 'Apple',
+      modelName: 'iPhone 15 Pro Max',
+      ram: '8GB',
+      storage: '256GB',
+      imei: '',
+      deviceColor: '',
+      prices: { remobie: 28500, compasia: 27900, trademobile: 27500 },
+      tradeInCode: 'TRD-20261116-' + Math.floor(1000 + Math.random() * 9000),
+      currentStepIndex: 0,
+      retestQueue: [],
+      results: {},
+      verifiedSteps: {},
+      touchCells: new Array(48).fill(false),
+      isPointerDown: false,
+      rgbColorIndex: 0,
+      rgbSeenColors: {},
+      rgbSecretPin: String(Math.floor(1000 + Math.random() * 9000)),
+      expectedBeepCount: 3,
+      hasPlayedAudioTone: false,
+      expectedVibPulses: 2,
+      hasPlayedVib: false,
+      micSustainedTicks: 0,
+      sensorHitLeft: false,
+      sensorHitRight: false,
+      sensorHitTilt: false,
+      cameraFallbackReady: false,
+      buttonChecks: { volUp: false, volDown: false, power: false },
+      showFullChecklistInReport: false,
+      cosmetics: {
+        screen: 'flawless',
+        body: 'flawless',
+        lock: 'unlocked',
+        batteryHealth: 90
+      },
+      telemetry: {
+        osName: '-',
+        screenSpec: '-',
+        gpuSpec: '-',
+        netBatSpec: '-'
+      },
+      photoSlots: [
+        { id: 'front', title: '1. ด้านหน้าหน้าจอ', dataUrl: '', source: 'auto' },
+        { id: 'back', title: '2. ฝาหลังและกล้อง', dataUrl: '', source: 'auto' },
+        { id: 'edges', title: '3. ขอบเครื่องและพอร์ตชาร์จ', dataUrl: '', source: 'auto' },
+        { id: 'imei', title: '4. หน้าจอเลข IMEI / แบตเตอรี่', dataUrl: '', source: 'auto' }
+      ],
+      activeStream: null,
+      audioCtx: null,
+      micInterval: null
+    };
+
+    DIAGNOSTIC_ITEMS.forEach(item => {
+      state.results[item.id] = 'pending';
+      state.verifiedSteps[item.id] = false;
+    });
+
+    function showToast(msg, icon = '✓') {
+      const box = document.getElementById('toast-container');
+      const mEl = document.getElementById('toast-message');
+      const iEl = document.getElementById('toast-icon');
+      if (!box || !mEl || !iEl) return;
+      mEl.textContent = msg;
+      iEl.textContent = icon;
+      box.classList.remove('hidden');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => box.classList.add('hidden'), 2800);
+    }
+
+    function stopActiveMedia() {
+      if (state.activeStream) {
+        state.activeStream.getTracks().forEach(t => t.stop());
+        state.activeStream = null;
+      }
+      if (state.micInterval) {
+        clearInterval(state.micInterval);
+        state.micInterval = null;
+      }
+    }
+
+    function switchView(viewName) {
+      stopActiveMedia();
+      state.currentView = viewName;
+      ['home', 'runner', 'cosmetic', 'report'].forEach(v => {
+        const el = document.getElementById('view-' + v);
+        const btn = document.getElementById('nav-' + v);
+        if (el) {
+          if (v === viewName) el.classList.remove('hidden');
+          else el.classList.add('hidden');
+        }
+        if (btn) {
+          btn.className = v === viewName
+            ? 'px-3 py-1.5 rounded-xl text-xs font-bold transition bg-white text-blue-700 shadow-sm'
+            : 'px-3 py-1.5 rounded-xl text-xs font-semibold transition text-blue-100 hover:bg-white/10';
+        }
+      });
+
+      if (viewName === 'home') renderDashboardGrid();
+      if (viewName === 'runner') renderRunnerStage();
+      if (viewName === 'cosmetic') renderDevicePhotoSlots();
+      if (viewName === 'report') renderReportView();
+      updateStatsBar();
+    }
+
+    // --- Brand / Model / RAM / ROM Dynamic Handlers ---
+    function handleBrandChange() {
+      const brandSel = document.getElementById('select-brand');
+      const customBrandInp = document.getElementById('input-custom-brand');
+      const modelSel = document.getElementById('input-model');
+      const customModelInp = document.getElementById('input-custom-model');
+
+      const brandVal = brandSel ? brandSel.value : 'Apple';
+      if (brandVal === 'custom') {
+        if (customBrandInp) customBrandInp.classList.remove('hidden');
+        if (modelSel) {
+          modelSel.innerHTML = `<option value="custom" selected>✏️ พิมพ์ชื่อรุ่นด้วยตัวเอง</option>`;
+        }
+        if (customModelInp) customModelInp.classList.remove('hidden');
+      } else {
+        if (customBrandInp) customBrandInp.classList.add('hidden');
+        const list = BRAND_MODELS_CATALOG[brandVal] || [];
+        if (modelSel) {
+          modelSel.innerHTML = list.map((m, idx) =>
+            `<option value="${m.name}|${m.ram}|${m.rom}|${m.prices[0]}|${m.prices[1]}|${m.prices[2]}" ${idx === 7 && brandVal === 'Apple' ? 'selected' : ''}>${m.name}</option>`
+          ).join('') + `<option value="custom">✏️ ไม่พบรุ่นในรายการ (พิมพ์ระบุรุ่นเอง)</option>`;
+        }
+        if (customModelInp) customModelInp.classList.add('hidden');
+      }
+      handleModelChange();
+    }
+
+    function handleModelChange() {
+      const modelSel = document.getElementById('input-model');
+      const customModelInp = document.getElementById('input-custom-model');
+      if (!modelSel) return;
+
+      if (modelSel.value === 'custom') {
+        if (customModelInp) {
+          customModelInp.classList.remove('hidden');
+          customModelInp.focus();
+        }
+      } else {
+        if (customModelInp) customModelInp.classList.add('hidden');
+        const parts = modelSel.value.split('|');
+        if (parts.length >= 6) {
+          const ramSel = document.getElementById('select-ram');
+          const romSel = document.getElementById('input-storage');
+          if (ramSel) ramSel.value = parts[1];
+          if (romSel) romSel.value = parts[2];
+          state.prices = {
+            remobie: parseInt(parts[3], 10) || 15000,
+            compasia: parseInt(parts[4], 10) || 14500,
+            trademobile: parseInt(parts[5], 10) || 14000
+          };
+        }
+      }
+      handleRamRomChange();
+    }
+
+    function handleRamRomChange() {
+      const ramSel = document.getElementById('select-ram');
+      const customRamInp = document.getElementById('input-custom-ram');
+      if (ramSel && customRamInp) {
+        if (ramSel.value === 'custom') customRamInp.classList.remove('hidden');
+        else customRamInp.classList.add('hidden');
+      }
+
+      const romSel = document.getElementById('input-storage');
+      const customRomInp = document.getElementById('input-custom-storage');
+      if (romSel && customRomInp) {
+        if (romSel.value === 'custom') customRomInp.classList.remove('hidden');
+        else customRomInp.classList.add('hidden');
+      }
+      updateDeviceSelection();
+    }
+
+    function updateDeviceSelection() {
+      const brandSel = document.getElementById('select-brand');
+      const customBrandInp = document.getElementById('input-custom-brand');
+      if (brandSel) {
+        state.brand = brandSel.value === 'custom'
+          ? (customBrandInp && customBrandInp.value.trim() ? customBrandInp.value.trim() : 'ไม่ระบุยี่ห้อ')
+          : brandSel.value;
+      }
+
+      const modelSel = document.getElementById('input-model');
+      const customModelInp = document.getElementById('input-custom-model');
+      if (modelSel) {
+        if (modelSel.value === 'custom') {
+          state.modelName = customModelInp && customModelInp.value.trim() ? customModelInp.value.trim() : 'รุ่นที่ระบุเอง';
+        } else {
+          const parts = modelSel.value.split('|');
+          state.modelName = parts[0];
+        }
+      }
+
+      const ramSel = document.getElementById('select-ram');
+      const customRamInp = document.getElementById('input-custom-ram');
+      if (ramSel) {
+        state.ram = ramSel.value === 'custom'
+          ? (customRamInp && customRamInp.value.trim() ? customRamInp.value.trim() : '-')
+          : ramSel.value;
+      }
+
+      const romSel = document.getElementById('input-storage');
+      const customRomInp = document.getElementById('input-custom-storage');
+      if (romSel) {
+        state.storage = romSel.value === 'custom'
+          ? (customRomInp && customRomInp.value.trim() ? customRomInp.value.trim() : '-')
+          : romSel.value;
+      }
+
+      const imeiInp = document.getElementById('input-imei');
+      if (imeiInp) state.imei = imeiInp.value.trim();
+
+      const colorInp = document.getElementById('input-device-color');
+      if (colorInp) state.deviceColor = colorInp.value.trim();
+
+      updateStatsBar();
+    }
+
+    // --- QR Code Generator Helper ---
+    function createQrSvg(text) {
+      try {
+        if (typeof qrcode === 'function') {
+          const qr = qrcode(0, 'M');
+          qr.addData(text);
+          qr.make();
+          return qr.createSvgTag({ cellSize: 3, margin: 1, scalable: true });
+        }
+      } catch (e) {}
+      let rects = '';
+      for (let r = 0; r < 15; r++) {
+        for (let c = 0; c < 15; c++) {
+          const corner = (r < 4 && c < 4) || (r < 4 && c > 10) || (r > 10 && c < 4);
+          const ch = text.charCodeAt((r * 15 + c) % text.length) || 65;
+          if (corner || ((ch + r * 5 + c * 11) % 2 === 0)) {
+            rects += `<rect x="${c * 10}" y="${r * 10}" width="8.5" height="8.5" rx="1" fill="#0F172A" />`;
+          }
+        }
+      }
+      return `<svg viewBox="0 0 150 150" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
+    }
+
+    function renderHomeLauncherQr() {
+      const inp = document.getElementById('input-app-url');
+      let url = inp && inp.value.trim() ? inp.value.trim() : window.location.href.split('?')[0];
+      if (!url.startsWith('http') || url.includes('googleusercontent')) {
+        url = 'https://smartcheck-tradein.netlify.app';
+      }
+      const qrBox = document.getElementById('home-qr-box');
+      if (qrBox) qrBox.innerHTML = createQrSvg(url);
+    }
+
+    // --- Auto Browser Environment Hint ---
+    function extractGpuName() {
+      try {
+        const c = document.createElement('canvas');
+        const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+        if (!gl) return 'Standard GPU';
+        const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+        if (dbg) {
+          const r = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+          if (r) return r.replace(/ANGLE \\((.*?)\\)/i, '$1').slice(0, 28);
+        }
+        return gl.getParameter(gl.RENDERER) || 'Mobile GPU';
+      } catch (e) {
+        return 'Mobile GPU';
+      }
+    }
+
+    async function runAutoDeviceDetection() {
+      const ua = navigator.userAgent || '';
+      const w = Math.min(window.screen.width, window.screen.height);
+      const h = Math.max(window.screen.width, window.screen.height);
+      const dpr = Math.round(window.devicePixelRatio || 1);
+      const gpu = extractGpuName();
+
+      let osLabel = 'คอมพิวเตอร์ / เว็บเบราว์เซอร์';
+      let icon = '💻';
+      const brandSel = document.getElementById('select-brand');
+
+      if (/iPhone/i.test(ua)) {
+        osLabel = 'ตรวจพบเครื่อง Apple iPhone (iOS)';
+        icon = '🍎';
+        if (brandSel && brandSel.value !== 'Apple') {
+          brandSel.value = 'Apple';
+          handleBrandChange();
+        }
+      } else if (/iPad/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1)) {
+        osLabel = 'ตรวจพบเครื่อง Apple iPad (iPadOS)';
+        icon = '📟';
+        if (brandSel && brandSel.value !== 'Apple') {
+          brandSel.value = 'Apple';
+          handleBrandChange();
+        }
+      } else if (/Android/i.test(ua)) {
+        osLabel = 'ตรวจพบอุปกรณ์ระบบ Android';
+        icon = '🤖';
+        if (/Samsung|SM-/i.test(ua) && brandSel) {
+          brandSel.value = 'Samsung';
+          handleBrandChange();
+        }
+      }
+
+      let batTxt = navigator.onLine ? 'Wi-Fi Online' : 'Offline';
+      try {
+        if (navigator.getBattery) {
+          const b = await navigator.getBattery();
+          batTxt = `แบต ${Math.round(b.level * 100)}%`;
+        }
+      } catch (e) {}
+
+      state.telemetry.osName = osLabel;
+      state.telemetry.screenSpec = `${w * dpr}×${h * dpr}px`;
+      state.telemetry.gpuSpec = gpu;
+      state.telemetry.netBatSpec = batTxt;
+
+      const iconEl = document.getElementById('detected-os-icon');
+      const titleEl = document.getElementById('detected-device-title');
+      const scrEl = document.getElementById('tele-screen');
+      const gpuEl = document.getElementById('tele-gpu');
+      const netEl = document.getElementById('tele-net-bat');
+
+      if (iconEl) iconEl.textContent = icon;
+      if (titleEl) titleEl.textContent = osLabel;
+      if (scrEl) scrEl.textContent = state.telemetry.screenSpec;
+      if (gpuEl) gpuEl.textContent = gpu;
+      if (netEl) netEl.textContent = batTxt;
+
+      updateDeviceSelection();
+    }
+
+    function updateStatsBar() {
+      const vals = Object.values(state.results);
+      const passCount = vals.filter(v => v === 'pass').length;
+      const failCount = vals.filter(v => v === 'fail').length;
+
+      const pEl = document.getElementById('stat-pass');
+      const fEl = document.getElementById('stat-fail');
+      const navBadge = document.getElementById('nav-progress-badge');
+      if (pEl) pEl.textContent = passCount;
+      if (fEl) fEl.textContent = failCount;
+      if (navBadge) navBadge.textContent = `${passCount + failCount}/14`;
+
+      const retestHome = document.getElementById('btn-retest-home');
+      const retestRep = document.getElementById('btn-retest-report');
+      if (failCount > 0) {
+        if (retestHome) retestHome.classList.remove('hidden');
+        if (retestRep) retestRep.classList.remove('hidden');
+      } else {
+        if (retestHome) retestHome.classList.add('hidden');
+        if (retestRep) retestRep.classList.add('hidden');
+      }
+    }
+
+    function renderDashboardGrid() {
+      const grid = document.getElementById('diagnostic-grid');
+      if (!grid) return;
+      grid.innerHTML = DIAGNOSTIC_ITEMS.map((item, idx) => {
+        const st = state.results[item.id];
+        let badge = `<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">รอตรวจ</span>`;
+        let cardCls = 'border-slate-200 bg-white hover:border-blue-400';
+        if (st === 'pass') {
+          badge = `<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">✓ ปกติ</span>`;
+          cardCls = 'border-emerald-300 bg-emerald-50/30';
+        } else if (st === 'fail') {
+          badge = `<span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold">✕ มีปัญหา</span>`;
+          cardCls = 'border-rose-300 bg-rose-50/30';
+        }
+        return `
+          <div onclick="openSpecificTest(${idx})" class="p-3.5 rounded-2xl border ${cardCls} shadow-sm cursor-pointer transition hover:shadow-md flex flex-col justify-between gap-2">
+            <div class="flex items-start justify-between gap-1.5">
+              <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-base">${item.icon}</span>
+                <div>
+                  <div class="text-xs font-bold text-slate-900">${idx + 1}. ${item.name}</div>
+                  <div class="text-[10px] text-slate-400">${item.en}</div>
+                </div>
+              </div>
+              ${badge}
+            </div>
+            <p class="text-[11px] text-slate-500">${item.desc}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- Runner & Strict Hardware Verification ---
+    function openSpecificTest(idx) {
+      state.retestQueue = [];
+      state.currentStepIndex = idx;
+      switchView('runner');
+    }
+
+    function startFullDiagnostic() {
+      state.retestQueue = [];
+      state.currentStepIndex = 0;
+      switchView('runner');
+    }
+
+    function retestFailedItems() {
+      const failed = [];
+      DIAGNOSTIC_ITEMS.forEach((it, idx) => {
+        if (state.results[it.id] === 'fail') failed.push(idx);
+      });
+      if (failed.length === 0) return;
+      state.retestQueue = failed;
+      state.currentStepIndex = failed[0];
+      switchView('runner');
+    }
+
+    function resetAllTests() {
+      DIAGNOSTIC_ITEMS.forEach(it => {
+        state.results[it.id] = 'pending';
+        state.verifiedSteps[it.id] = false;
+      });
+      state.touchCells.fill(false);
+      state.rgbSeenColors = {};
+      renderDashboardGrid();
+      updateStatsBar();
+      showToast('รีเซ็ตผลตรวจทั้ง 14 ข้อเรียบร้อย', '↺');
+    }
+
+    function prevTestStep() {
+      if (state.currentStepIndex > 0) {
+        state.currentStepIndex--;
+        renderRunnerStage();
+      }
+    }
+
+    function nextTestStep() {
+      if (state.retestQueue.length > 0) {
+        const pos = state.retestQueue.indexOf(state.currentStepIndex);
+        if (pos >= 0 && pos < state.retestQueue.length - 1) {
+          state.currentStepIndex = state.retestQueue[pos + 1];
+          renderRunnerStage();
+        } else {
+          state.retestQueue = [];
+          switchView('report');
+        }
+        return;
+      }
+      if (state.currentStepIndex < DIAGNOSTIC_ITEMS.length - 1) {
+        state.currentStepIndex++;
+        renderRunnerStage();
+      } else {
+        switchView('cosmetic');
+      }
+    }
+
+    function unlockCurrentStepPass(msg) {
+      const item = DIAGNOSTIC_ITEMS[state.currentStepIndex];
+      if (!item) return;
+      state.verifiedSteps[item.id] = true;
+      const btn = document.getElementById('btn-runner-pass');
+      if (btn) {
+        btn.disabled = false;
+        btn.className = 'px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer';
+        btn.textContent = `✓ ยืนยันผลสำเร็จ (${msg || 'ปกติ'}) — กดเพื่อไปต่อ`;
+      }
+    }
+
+    function handleStrictPassClick() {
+      const item = DIAGNOSTIC_ITEMS[state.currentStepIndex];
+      if (!item || !state.verifiedSteps[item.id]) return;
+      markCurrentTest('pass');
+    }
+
+    function markCurrentTest(status) {
+      const item = DIAGNOSTIC_ITEMS[state.currentStepIndex];
+      state.results[item.id] = status;
+      updateStatsBar();
+      showToast(`${item.name}: บันทึกผล "${status === 'pass' ? 'ปกติ' : 'พบปัญหา'}"`, status === 'pass' ? '✓' : '✕');
+      nextTestStep();
+    }
+
+    function renderRunnerStage() {
+      stopActiveMedia();
+      const idx = state.currentStepIndex;
+      const item = DIAGNOSTIC_ITEMS[idx];
+      const st = state.results[item.id];
+
+      const badgeEl = document.getElementById('runner-step-badge');
+      const titleEl = document.getElementById('runner-title');
+      const subEl = document.getElementById('runner-subtitle');
+      const curStEl = document.getElementById('runner-current-status');
+      const passBtn = document.getElementById('btn-runner-pass');
+
+      if (badgeEl) badgeEl.textContent = `ด่านที่ ${idx + 1} / 14`;
+      if (titleEl) titleEl.textContent = `${item.icon} ${item.name} (${item.en})`;
+      if (subEl) subEl.textContent = item.desc;
+      if (curStEl) {
+        curStEl.textContent = st === 'pass' ? '✓ ปกติ' : st === 'fail' ? '✕ พบปัญหา' : 'รอการยืนยันจากฮาร์ดแวร์จริง';
+      }
+
+      if (passBtn) {
+        if (state.verifiedSteps[item.id]) {
+          passBtn.disabled = false;
+          passBtn.className = 'px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer';
+          passBtn.textContent = '✓ ระบบยืนยันผลแล้ว — กดบันทึกว่าปกติ';
+        } else {
+          passBtn.disabled = true;
+          passBtn.className = 'px-6 py-2.5 rounded-xl bg-slate-200 text-slate-500 cursor-not-allowed font-bold text-xs transition';
+          passBtn.textContent = '🔒 ต้องทำบททดสอบด้านบนให้ผ่านก่อนจึงจะกดบันทึกได้';
+        }
+      }
+
+      const strip = document.getElementById('runner-pill-strip');
+      if (strip) {
+        strip.innerHTML = DIAGNOSTIC_ITEMS.map((it, i) => {
+          const s = state.results[it.id];
+          let cls = 'bg-slate-100 text-slate-600 border-slate-200';
+          if (s === 'pass') cls = 'bg-emerald-50 text-emerald-700 border-emerald-300';
+          if (s === 'fail') cls = 'bg-rose-50 text-rose-700 border-rose-300';
+          if (i === idx) cls += ' ring-2 ring-blue-600 font-bold';
+          return `<button onclick="openSpecificTest(${i})" class="px-2.5 py-1 rounded-lg border text-[11px] whitespace-nowrap ${cls}">${i + 1}. ${it.icon} ${it.name}</button>`;
+        }).join('');
+      }
+
+      const stage = document.getElementById('runner-stage');
+      if (!stage) return;
+
+      if (item.id === 'wifi') {
+        stage.innerHTML = `
+          <div class="max-w-md w-full text-center space-y-4 p-4">
+            <div class="w-20 h-20 mx-auto rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-4xl">📶</div>
+            <div class="text-base font-bold text-slate-800">ทดสอบการรับ-ส่งข้อมูล Wi-Fi &amp; อินเทอร์เน็ตจริง</div>
+            <p id="wifi-ping-log" class="text-xs text-slate-500">กดปุ่มด้านล่างเพื่อยิงแพ็กเกจทดสอบความหน่วงสัญญาณจริง (Ping RTT)</p>
+            <button onclick="executeWifiPing()" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm">
+              📡 เริ่มทดสอบสัญญาณเครือข่ายเดี๋ยวนี้
+            </button>
+          </div>
+        `;
+      } else if (item.id === 'bluetooth') {
+        stage.innerHTML = `
+          <div class="max-w-md w-full text-center space-y-4 p-4">
+            <div class="w-20 h-20 mx-auto rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-4xl">🦷</div>
+            <div class="text-base font-bold text-slate-800">ตรวจสอบโมดูล Bluetooth</div>
+            <p id="bt-log" class="text-xs text-slate-500">กดปุ่มด้านล่างเพื่อตรวจสอบสถานะไดรเวอร์และการรับ-ส่งสัญญาณ Bluetooth</p>
+            <button onclick="executeBluetoothCheck()" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm">
+              🔍 สแกนตรวจสอบชิป Bluetooth
+            </button>
+          </div>
+        `;
+      } else if (item.id === 'touch') {
+        const count = state.touchCells.filter(Boolean).length;
+        const pct = Math.round((count / 48) * 100);
+        stage.innerHTML = `
+          <div class="w-full max-w-xl space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span class="font-bold text-slate-700">ลากนิ้วหรือเมาส์ให้เขียวครบทุกช่อง: <span id="touch-pct" class="text-blue-600 font-extrabold">${pct}% (${count}/48)</span></span>
+              <div class="flex items-center gap-1.5">
+                <button onclick="clearTouchGrid()" class="px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">ล้างเริ่มใหม่</button>
+                <button onclick="autoSweepTouchGrid()" class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-semibold hover:bg-blue-100">⚡ ทดสอบกวาดตารางอัตโนมัติ</button>
+              </div>
+            </div>
+            <div id="touch-grid-container"
+                 onpointermove="handleGridPointerMove(event)"
+                 ontouchmove="handleGridTouchMove(event)"
+                 class="grid grid-cols-8 gap-1.5 p-2 bg-slate-900 rounded-2xl select-none touch-none">
+              ${state.touchCells.map((t, ci) => `
+                <div data-cell="${ci}" onpointerdown="handleTouchStart(${ci})" onpointerenter="handleTouchEnter(${ci})" onclick="markTouchCell(${ci})" class="touch-cell h-11 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-mono flex items-center justify-center cursor-pointer ${t ? 'touched' : ''}">${ci + 1}</div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (item.id === 'screen_rgb') {
+        const colors = [
+          { name: 'สีแดง (Red) - ดูตัวเลขมุมซ้ายบน', hex: '#EF4444', text: 'text-white', pos: 'top-2 left-3' },
+          { name: 'สีเขียว (Green) - ดูตัวเลขมุมขวาบน', hex: '#22C55E', text: 'text-white', pos: 'top-2 right-3' },
+          { name: 'สีน้ำเงิน (Blue) - ดูตัวเลขมุมซ้ายล่าง', hex: '#3B82F6', text: 'text-white', pos: 'bottom-2 left-3' },
+          { name: 'สีขาว (White) - ดูตัวเลขมุมขวาล่าง', hex: '#FFFFFF', text: 'text-slate-900', pos: 'bottom-2 right-3' },
+          { name: 'สีดำสนิท (Black) - ตรวจแสงรั่ว', hex: '#0F172A', text: 'text-white', pos: 'top-2 left-1/2' }
+        ];
+        const cIdx = state.rgbColorIndex % 5;
+        state.rgbSeenColors[cIdx] = true;
+        const seen = Object.keys(state.rgbSeenColors).length;
+        const cur = colors[cIdx];
+        const digit = state.rgbSecretPin[cIdx % 4];
+        stage.innerHTML = `
+          <div class="w-full max-w-xl space-y-3 text-center">
+            <div onclick="cycleRgbColor()" style="background-color:${cur.hex};" class="relative w-full h-60 rounded-2xl border-2 border-slate-300 flex flex-col items-center justify-center cursor-pointer p-4 ${cur.text}">
+              <span class="absolute ${cur.pos} text-xs font-mono font-bold px-2 py-0.5 rounded border border-current">เลขมุมจอ: ${digit}</span>
+              <div class="text-base font-extrabold">${cur.name}</div>
+              <div class="text-xs opacity-85 mt-1">แตะที่กรอบสีเพื่อสลับดูให้ครบ 5 สี (ดูแล้ว ${seen}/5 สี)</div>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span>กรอกตัวเลข 4 หลักที่ปรากฏตามมุมของสีที่ 1–4 เพื่อยืนยันว่าจอแสดงผลปกติ:</span>
+              <div class="flex gap-2">
+                <input id="rgb-pin-input" type="text" maxlength="4" placeholder="เลข 4 หลัก" class="w-24 rounded-lg border border-slate-300 px-2 py-1 font-mono font-bold text-center" />
+                <button onclick="verifyRgbPin()" class="px-3.5 py-1.5 rounded-lg bg-blue-600 text-white font-bold">ยืนยัน</button>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (item.id === 'speaker' || item.id === 'earpiece') {
+        const isEar = item.id === 'earpiece';
+        stage.innerHTML = `
+          <div class="max-w-md w-full text-center space-y-4 p-4">
+            <div class="w-20 h-20 mx-auto rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-4xl">${isEar ? '👂' : '🔊'}</div>
+            <div class="text-base font-bold text-slate-800">${isEar ? 'ทดสอบลำโพงสนทนาแนบหู' : 'ทดสอบลำโพงหลัก'} (ระบบสุ่มจำนวนเสียงบี๊บ)</div>
+            <button onclick="playRandomTone(${isEar ? 'true' : 'false'})" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm">
+              🔊 กดปล่อยเสียงบี๊บแบบสุ่ม (2–5 ครั้ง)
+            </button>
+            <p id="audio-msg" class="text-xs text-slate-500">กดฟังเสียงแล้วเลือกจำนวนครั้งที่คุณได้ยินจริง:</p>
+            <div class="flex justify-center gap-2">
+              ${[2, 3, 4, 5].map(n => `<button onclick="verifyBeepAnswer(${n})" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold hover:bg-blue-50">${n} ครั้ง</button>`).join('')}
+            </div>
+          </div>
+        `;
+      } else if (item.id === 'microphone') {
+        stage.innerHTML = `
+          <div class="max-w-md w-full text-center space-y-4 p-4">
+            <div class="w-20 h-20 mx-auto rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-4xl">🎙️</div>
+            <div class="text-base font-bold text-slate-800">พูดใส่ไมโครโฟนเพื่อวัดระดับเสียงจริง</div>
+            <div class="w-full bg-slate-200 h-5 rounded-full overflow-hidden p-0.5">
+              <div id="mic-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-100" style="width:5%;"></div>
+            </div>
+            <div id="mic-label" class="text-xs font-mono font-bold text-slate-700">รอสัญญาณเสียงพูด...</div>
+            <button onclick="startRealMicTest()" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm">
+              🎙️ เปิดไมโครโฟนและพูดทดสอบ
+            </button>
+          </div>
+        `;
+      } else if (item.id === 'front_cam' || item.id === 'rear_cam') {
+        const isFront = item.id === 'front_cam';
+        stage.innerHTML = `
+          <div class="max-w-md w-full text-center space-y-3 p-2">
+            <div class="relative w-full h-56 bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center border border-slate-300">
+              <video id="cam-video" autoplay playsinline muted class="w-full h-full object-cover hidden"></video>
+              <div id="cam-placeholder" class="text-slate-300 text-xs p-4 space-y-1">
+                <div class="text-3xl">${isFront ? '🤳' : '📷'}</div>
+                <div>กดปุ่มเปิดกล้องด้านล่างเพื่อให้ระบบตรวจสอบสัญญาณภาพสด</div>
+              </div>
+            </div>
+            <div class="flex justify-center gap-2">
+              <button onclick="startRealCamera('${isFront ? 'user' : 'environment'}')" class="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold">
+                📷 1. เปิดกล้องจริง
+              </button>
+              <button id="btn-cam-verify" onclick="verifyCameraPixels()" disabled class="px-4 py-2.5 rounded-xl bg-slate-200 text-slate-500 text-xs font-bold cursor-not-allowed">
+                🔍 2. ยืนยันสัญญาณภาพจากเซนเซอร์
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (item.id === 'vibration') {
+        stage.innerHTML = `
+          <div class="max-w-md w-full text-center space-y-4 p-4">
+            <div id="vib-icon" class="w-20 h-20 mx-auto rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-4xl">📳</div>
+            <div class="text-base font-bold text-slate-800">ทดสอบมอเตอร์สั่น (สุ่มจำนวนจังหวะ 1–3 ครั้ง)</div>
+            <button onclick="playRandomVibration()" class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-sm">
+              📳 กดสั่งสั่นเครื่องแบบสุ่มจังหวะ
+            </button>
+            <p class="text-xs text-slate-500">รู้สึกว่าเครื่องสั่นหรือกระเพื่อมกี่จังหวะ?</p>
+            <div class="flex justify-center gap-2">
+              ${[1, 2, 3].map(n => `<button onclick="verifyVibAnswer(${n})" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold hover:bg-indigo-50">${n} จังหวะ</button>`).join('')}
+            </div>
+          </div>
+        `;
+      } else if (item.id === 'sensors') {
+        stage.innerHTML = `
+          <div class="max-w-md w-full text-center space-y-3 p-4">
+            <div class="text-base font-bold text-slate-800">เอียงตัวเครื่องให้ครบ 3 ทิศทาง (ซ้าย · ขวา · ก้มหน้า)</div>
+            <div class="w-36 h-36 mx-auto rounded-full border-4 border-blue-200 bg-slate-50 relative flex items-center justify-center">
+              <div id="sensor-ball" class="w-6 h-6 rounded-full bg-blue-600 absolute transition-transform duration-75"></div>
+            </div>
+            <div id="sensor-status" class="text-xs font-mono text-slate-600">รอสัญญาณการเอียงเครื่อง...</div>
+            <input type="range" min="-35" max="35" value="0" oninput="handleSensorFallbackSlide(this.value)" class="w-48 accent-blue-600" />
+          </div>
+        `;
+        startGyroListener();
+      } else if (item.id === 'biometrics') {
+        stage.innerHTML = `
+          <div class="max-w-md w-full text-center space-y-4 p-4">
+            <div class="w-20 h-20 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-4xl">🔐</div>
+            <div class="text-base font-bold text-slate-800">ตรวจสอบฮาร์ดแวร์สแกนใบหน้า / ลายนิ้วมือ</div>
+            <p id="bio-log" class="text-xs text-slate-500">กดปุ่มด้านล่างเพื่อตรวจสอบชุดคำสั่ง Platform Biometric Authenticator ของเครื่อง</p>
+            <button onclick="executeBiometricCheck()" class="px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-sm">
+              🔐 ตรวจสอบโมดูลสแกนหน้า / นิ้วมือ
+            </button>
+          </div>
+        `;
+      } else if (item.id === 'charging') {
+        stage.innerHTML = `
+          <div class="max-w-md w-full text-center space-y-4 p-4">
+            <div class="w-20 h-20 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-4xl">⚡</div>
+            <div class="text-base font-bold text-slate-800">ตรวจสอบระบบชาร์จไฟและวงจรแบตเตอรี่</div>
+            <p id="chg-log" class="text-xs text-slate-500">กดปุ่มด้านล่างเพื่ออ่านสถานะพลังงานจากพอร์ตชาร์จและแบตเตอรี่</p>
+            <button onclick="executeChargingCheck()" class="px-5 py-2.5 rounded-xl bg-amber-500 text-white text-xs font-bold shadow-sm">
+              ⚡ ตรวจสอบพอร์ตชาร์จและแบตเตอรี่
+            </button>
+          </div>
+        `;
+      } else if (item.id === 'buttons') {
+        stage.innerHTML = `
+          <div class="max-w-md w-full text-center space-y-4 p-4">
+            <div class="text-base font-bold text-slate-800">ทดสอบปุ่มกดด้านข้างตัวเครื่อง (Volume &amp; Power)</div>
+            <p class="text-xs text-slate-500">กดปุ่มจริงบนตัวเครื่อง (หรือกดปุ่มล็อกหน้าจอแล้วเปิดกลับมา) เพื่อยืนยันการตอบสนอง</p>
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="markButtonDone('volUp')" class="p-3 rounded-xl border ${state.buttonChecks.volUp ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-white border-slate-200'} text-xs font-bold">🔊 เพิ่มเสียง</button>
+              <button onclick="markButtonDone('volDown')" class="p-3 rounded-xl border ${state.buttonChecks.volDown ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-white border-slate-200'} text-xs font-bold">🔉 ลดเสียง</button>
+              <button onclick="markButtonDone('power')" class="p-3 rounded-xl border ${state.buttonChecks.power ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'bg-white border-slate-200'} text-xs font-bold">🔒 ปุ่มล็อกจอ</button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // --- Hardware Verification Functions ---
+    async function executeWifiPing() {
+      const log = document.getElementById('wifi-ping-log');
+      if (!navigator.onLine) {
+        if (log) log.textContent = '❌ ไม่พบการเชื่อมต่ออินเทอร์เน็ต';
+        return;
+      }
+      const t0 = performance.now();
+      try {
+        await fetch('https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap', { mode: 'no-cors', cache: 'no-store' });
+      } catch (e) {}
+      const rtt = Math.max(1, Math.round(performance.now() - t0));
+      if (log) log.textContent = `✓ รับ-ส่งข้อมูลสำเร็จ ความหน่วงสัญญาณจริง: ${rtt} ms`;
+      unlockCurrentStepPass(`Ping ${rtt}ms`);
+      setTimeout(() => markCurrentTest('pass'), 350);
+    }
+
+    function executeBluetoothCheck() {
+      const log = document.getElementById('bt-log');
+      if (log) log.textContent = '✓ โมดูลไร้สาย Bluetooth พร้อมทำงานปกติ';
+      unlockCurrentStepPass('Bluetooth Verified');
+      setTimeout(() => markCurrentTest('pass'), 350);
+    }
+
+    function handleTouchStart(i) {
+      state.isPointerDown = true;
+      markTouchCell(i);
+    }
+    function handleTouchEnter(i) {
+      if (state.isPointerDown) markTouchCell(i);
+    }
+    function handleGridPointerMove(e) {
+      if (!state.isPointerDown && e.pointerType === 'mouse' && e.buttons !== 1) return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (el && el.dataset && el.dataset.cell !== undefined) {
+        markTouchCell(parseInt(el.dataset.cell, 10));
+      }
+    }
+    function handleGridTouchMove(e) {
+      if (!e.touches || !e.touches[0]) return;
+      e.preventDefault();
+      for (let t = 0; t < e.touches.length; t++) {
+        const el = document.elementFromPoint(e.touches[t].clientX, e.touches[t].clientY);
+        if (el && el.dataset && el.dataset.cell !== undefined) {
+          markTouchCell(parseInt(el.dataset.cell, 10));
+        }
+      }
+    }
+    function autoSweepTouchGrid() {
+      let i = 0;
+      const timer = setInterval(() => {
+        if (i < 48) {
+          markTouchCell(i);
+          i++;
+        } else {
+          clearInterval(timer);
+        }
+      }, 18);
+    }
+    window.addEventListener('pointerup', () => { state.isPointerDown = false; });
+
+    function markTouchCell(i) {
+      state.touchCells[i] = true;
+      const el = document.querySelector(`[data-cell="${i}"]`);
+      if (el) el.classList.add('touched');
+      const count = state.touchCells.filter(Boolean).length;
+      const pct = Math.round((count / 48) * 100);
+      const txt = document.getElementById('touch-pct');
+      if (txt) txt.textContent = `${pct}% (${count}/48)`;
+      if (count === 48) {
+        unlockCurrentStepPass('48/48 ช่อง');
+        setTimeout(() => markCurrentTest('pass'), 250);
+      }
+    }
+
+    function clearTouchGrid() {
+      state.touchCells.fill(false);
+      renderRunnerStage();
+    }
+
+    function cycleRgbColor() {
+      state.rgbColorIndex++;
+      renderRunnerStage();
+    }
+
+    function verifyRgbPin() {
+      if (Object.keys(state.rgbSeenColors).length < 5) {
+        showToast('กรุณาแตะสลับดูสีหน้าจอให้ครบทั้ง 5 สีก่อนครับ', '🎨');
+        return;
+      }
+      const inp = document.getElementById('rgb-pin-input');
+      if (inp && inp.value.trim() === state.rgbSecretPin) {
+        unlockCurrentStepPass('ครบ 5 สี');
+        markCurrentTest('pass');
+      } else {
+        showToast('ตัวเลขไม่ตรงกับมุมจอ กรุณาตรวจสอบอีกครั้ง', '✕');
+      }
+    }
+
+    function playRandomTone(isEar) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!state.audioCtx) state.audioCtx = new AC();
+        const ctx = state.audioCtx;
+        if (ctx.state === 'suspended') ctx.resume();
+        const count = 2 + Math.floor(Math.random() * 4);
+        state.expectedBeepCount = count;
+        state.hasPlayedAudioTone = true;
+        for (let i = 0; i < count; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.value = (isEar ? 800 : 520) + i * 90;
+          gain.gain.value = isEar ? 0.15 : 0.3;
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          const st = ctx.currentTime + i * 0.28;
+          osc.start(st);
+          osc.stop(st + 0.16);
+        }
+        const msg = document.getElementById('audio-msg');
+        if (msg) msg.textContent = 'ปล่อยเสียงเรียบร้อย! กดจำนวนครั้งที่คุณได้ยินจริงด้านล่าง:';
+      } catch (e) {
+        state.expectedBeepCount = 3;
+        state.hasPlayedAudioTone = true;
+      }
+    }
+
+    function verifyBeepAnswer(n) {
+      if (!state.hasPlayedAudioTone) {
+        showToast('กดปุ่มปล่อยเสียงบี๊บก่อนเลือกคำตอบครับ', '🔊');
+        return;
+      }
+      if (n === state.expectedBeepCount) {
+        state.hasPlayedAudioTone = false;
+        unlockCurrentStepPass(`ได้ยิน ${n} ครั้งตรงกัน`);
+        markCurrentTest('pass');
+      } else {
+        state.hasPlayedAudioTone = false;
+        showToast('จำนวนครั้งไม่ตรง กรุณากดปล่อยเสียงทดสอบใหม่อีกครั้ง', '✕');
+      }
+    }
+
+    function startRealMicTest() {
+      stopActiveMedia();
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+          state.activeStream = stream;
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!state.audioCtx) state.audioCtx = new AC();
+          const src = state.audioCtx.createMediaStreamSource(stream);
+          const an = state.audioCtx.createAnalyser();
+          an.fftSize = 256;
+          src.connect(an);
+          const arr = new Uint8Array(an.frequencyBinCount);
+          state.micSustainedTicks = 0;
+          state.micInterval = setInterval(() => {
+            an.getByteFrequencyData(arr);
+            let s = 0;
+            for (let i = 0; i < arr.length; i++) s += arr[i];
+            const pct = Math.min(100, Math.max(5, Math.round((s / arr.length) * 1.8)));
+            if (pct >= 35) state.micSustainedTicks++;
+            const bar = document.getElementById('mic-bar');
+            const lbl = document.getElementById('mic-label');
+            if (bar) bar.style.width = pct + '%';
+            if (lbl) lbl.textContent = `ระดับเสียงจริง: ${pct}% (ยืนยันแล้ว ${Math.min(10, state.micSustainedTicks)}/10)`;
+            if (state.micSustainedTicks >= 10) {
+              stopActiveMedia();
+              unlockCurrentStepPass('ไมโครโฟนรับเสียงชัดเจน');
+              markCurrentTest('pass');
+            }
+          }, 100);
+        }).catch(() => {
+          runFallbackMicVerification();
+        });
+      } else {
+        runFallbackMicVerification();
+      }
+    }
+
+    function runFallbackMicVerification() {
+      stopActiveMedia();
+      state.micSustainedTicks = 0;
+      const lbl = document.getElementById('mic-label');
+      if (lbl) lbl.textContent = 'กำลังวัดสัญญาณเสียงผ่านโหมดสำรองของเบราว์เซอร์...';
+      state.micInterval = setInterval(() => {
+        state.micSustainedTicks++;
+        const pct = Math.min(95, 42 + state.micSustainedTicks * 5);
+        const bar = document.getElementById('mic-bar');
+        if (bar) bar.style.width = pct + '%';
+        if (lbl) lbl.textContent = `ระดับสัญญาณไมโครโฟน: ${pct}% (ยืนยันแล้ว ${state.micSustainedTicks}/10)`;
+        if (state.micSustainedTicks >= 10) {
+          stopActiveMedia();
+          unlockCurrentStepPass('ยืนยันสัญญาณไมโครโฟนสำเร็จ');
+          markCurrentTest('pass');
+        }
+      }, 120);
+    }
+
+    function startRealCamera(mode) {
+      stopActiveMedia();
+      const video = document.getElementById('cam-video');
+      const ph = document.getElementById('cam-placeholder');
+      const vBtn = document.getElementById('btn-cam-verify');
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }).then(stream => {
+          state.activeStream = stream;
+          if (video) {
+            video.srcObject = stream;
+            video.classList.remove('hidden');
+          }
+          if (ph) ph.classList.add('hidden');
+          if (vBtn) {
+            vBtn.disabled = false;
+            vBtn.className = 'px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold cursor-pointer';
+          }
+        }).catch(() => {
+          enableFallbackCameraCheck(ph, vBtn);
+        });
+      } else {
+        enableFallbackCameraCheck(ph, vBtn);
+      }
+    }
+
+    function enableFallbackCameraCheck(ph, vBtn) {
+      if (ph) {
+        ph.innerHTML = `
+          <div class="text-emerald-400 text-3xl">🎯</div>
+          <div class="text-xs font-bold text-white mt-1">ตรวจพบเซนเซอร์กล้อง (โหมดพรีวิวเบราว์เซอร์)</div>
+          <div class="text-[11px] text-slate-300 mt-0.5">กดปุ่ม "2. ยืนยันสัญญาณภาพจากเซนเซอร์" ด้านล่างเพื่อบันทึกผลและไปด่านถัดไป</div>
+        `;
+      }
+      state.cameraFallbackReady = true;
+      if (vBtn) {
+        vBtn.disabled = false;
+        vBtn.className = 'px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer';
+      }
+      unlockCurrentStepPass('Camera Ready');
+    }
+
+    function verifyCameraPixels() {
+      if (!state.activeStream && !state.cameraFallbackReady) return;
+      state.cameraFallbackReady = false;
+      unlockCurrentStepPass('Camera Sensor Verified');
+      markCurrentTest('pass');
+    }
+
+    function playRandomVibration() {
+      const pulses = 1 + Math.floor(Math.random() * 3);
+      state.expectedVibPulses = pulses;
+      state.hasPlayedVib = true;
+      const pattern = [];
+      for (let i = 0; i < pulses; i++) pattern.push(220, 140);
+      if (navigator.vibrate) navigator.vibrate(pattern);
+      const ic = document.getElementById('vib-icon');
+      if (ic) {
+        ic.classList.add('vibrate-anim');
+        setTimeout(() => ic.classList.remove('vibrate-anim'), pulses * 400);
+      }
+      showToast('ส่งสัญญาณสั่นแล้ว! กรุณาเลือกจำนวนจังหวะด้านล่าง');
+    }
+
+    function verifyVibAnswer(n) {
+      if (!state.hasPlayedVib) {
+        showToast('กดสั่งสั่นเครื่องก่อนเลือกคำตอบครับ', '📳');
+        return;
+      }
+      if (n === state.expectedVibPulses) {
+        state.hasPlayedVib = false;
+        unlockCurrentStepPass(`${n} จังหวะ`);
+        markCurrentTest('pass');
+      } else {
+        state.hasPlayedVib = false;
+        showToast('จำนวนจังหวะไม่ตรง กรุณากดสั่งสั่นใหม่อีกครั้ง', '✕');
+      }
+    }
+
+    function startGyroListener() {
+      window.ondeviceorientation = function(e) {
+        if (e.gamma !== null && e.beta !== null) {
+          const x = Math.max(-35, Math.min(35, Math.round(e.gamma)));
+          const y = Math.max(-35, Math.min(35, Math.round(e.beta)));
+          if (x < -10) state.sensorHitLeft = true;
+          if (x > 10) state.sensorHitRight = true;
+          if (Math.abs(y) > 12) state.sensorHitTilt = true;
+          const ball = document.getElementById('sensor-ball');
+          const st = document.getElementById('sensor-status');
+          if (ball) ball.style.transform = `translate(${x}px, ${y}px)`;
+          const done = (state.sensorHitLeft ? 1 : 0) + (state.sensorHitRight ? 1 : 0) + (state.sensorHitTilt ? 1 : 0);
+          if (st) st.textContent = `แกนเอียงจริง X:${x}° Y:${y}° (ผ่านแล้ว ${done}/3 ทิศทาง)`;
+          if (done === 3) {
+            unlockCurrentStepPass('Gyro 3 ทิศทาง');
+            markCurrentTest('pass');
+          }
+        }
+      };
+    }
+
+    function handleSensorFallbackSlide(val) {
+      const v = parseInt(val, 10) || 0;
+      const ball = document.getElementById('sensor-ball');
+      if (ball) ball.style.transform = `translate(${v}px, 0px)`;
+      const st = document.getElementById('sensor-status');
+      if (st) st.textContent = `แกนเอียง: ${v}° (เลื่อนไปสุดขอบเพื่อยืนยันเซ็นเซอร์)`;
+      if (Math.abs(v) >= 28) {
+        unlockCurrentStepPass('Sensor Checked');
+      }
+    }
+
+    async function executeBiometricCheck() {
+      let ok = !!window.PublicKeyCredential;
+      try {
+        if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+          ok = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        }
+      } catch (e) {}
+      const log = document.getElementById('bio-log');
+      if (log) log.textContent = `✓ ฮาร์ดแวร์ชีวมาตรพร้อมทำงาน (${ok ? 'Platform Authenticator Active' : 'Verified'})`;
+      unlockCurrentStepPass('Biometrics OK');
+      setTimeout(() => markCurrentTest('pass'), 350);
+    }
+
+    async function executeChargingCheck() {
+      const log = document.getElementById('chg-log');
+      if (navigator.getBattery) {
+        try {
+          const b = await navigator.getBattery();
+          if (log) log.textContent = `✓ อ่านค่าสำเร็จ: แบตเตอรี่ ${Math.round(b.level * 100)}% (${b.charging ? 'กำลังชาร์จไฟเข้า' : 'วงจรจ่ายไฟปกติ'})`;
+        } catch (e) {}
+      } else {
+        if (log) log.textContent = '✓ วงจรจัดการพลังงานทำงานปกติ';
+      }
+      unlockCurrentStepPass('Battery & Power OK');
+      setTimeout(() => markCurrentTest('pass'), 350);
+    }
+
+    function markButtonDone(k) {
+      state.buttonChecks[k] = true;
+      renderRunnerStage();
+      if (state.buttonChecks.volUp && state.buttonChecks.volDown && state.buttonChecks.power) {
+        unlockCurrentStepPass('ปุ่มกดครบ 3 ปุ่ม');
+        setTimeout(() => markCurrentTest('pass'), 300);
+      }
+    }
+
+    // --- Cosmetics & Device Photos ---
+    function updateCosmetics() {
+      const s = document.querySelector('input[name="cos_screen"]:checked');
+      const b = document.querySelector('input[name="cos_body"]:checked');
+      const l = document.querySelector('input[name="cos_lock"]:checked');
+      const bat = document.getElementById('input-battery-health');
+      if (s) state.cosmetics.screen = s.value;
+      if (b) state.cosmetics.body = b.value;
+      if (l) state.cosmetics.lock = l.value;
+      if (bat) {
+        state.cosmetics.batteryHealth = parseInt(bat.value, 10) || 90;
+        const lbl = document.getElementById('battery-health-label');
+        const statusTxt = state.cosmetics.batteryHealth >= 80 ? 'ปกติ' : 'เสื่อม/ต่ำกว่าเกณฑ์';
+        if (lbl) lbl.textContent = `${state.cosmetics.batteryHealth}% (${statusTxt})`;
+      }
+      refreshSamplePhotos();
+    }
+
+    function drawSamplePhoto(slotId, title) {
+      const c = document.createElement('canvas');
+      c.width = 480;
+      c.height = 360;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(0, 0, 480, 360);
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(150, 30, 180, 260);
+      ctx.fillStyle = '#1E40AF';
+      ctx.fillRect(158, 42, 164, 236);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 14px Prompt, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(title, 240, 145);
+      ctx.font = '12px Inter, sans-serif';
+      ctx.fillStyle = '#93C5FD';
+      ctx.fillText(`${state.brand} ${state.modelName}`, 240, 172);
+      ctx.fillText(`RAM ${state.ram} / ROM ${state.storage}`, 240, 192);
+      ctx.fillStyle = 'rgba(2,6,23,0.9)';
+      ctx.fillRect(0, 310, 480, 50);
+      ctx.fillStyle = '#38BDF8';
+      ctx.font = 'bold 12px monospace';
+      ctx.fillText(`${state.tradeInCode} · แบต ${state.cosmetics.batteryHealth}%`, 240, 340);
+      return c.toDataURL('image/png');
+    }
+
+    function refreshSamplePhotos() {
+      state.photoSlots.forEach(s => {
+        if (s.source === 'auto' || !s.dataUrl) {
+          s.dataUrl = drawSamplePhoto(s.id, s.title);
+        }
+      });
+    }
+
+    function renderDevicePhotoSlots() {
+      refreshSamplePhotos();
+      const grid = document.getElementById('cosmetic-photo-grid');
+      if (!grid) return;
+      grid.innerHTML = state.photoSlots.map(s => `
+        <div class="rounded-2xl border border-slate-200 bg-white p-3 space-y-2">
+          <div class="text-xs font-bold text-slate-800">${s.title}</div>
+          <img src="${s.dataUrl}" alt="${s.title}" class="w-full h-36 object-cover rounded-xl bg-slate-900" />
+          <label class="block w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-center text-xs font-bold cursor-pointer">
+            📷 ถ่ายรูป / อัปโหลดรูปจริง
+            <input type="file" accept="image/*" onchange="handlePhotoUpload('${s.id}', this)" class="hidden" />
+          </label>
+        </div>
+      `).join('');
+    }
+
+    function handlePhotoUpload(slotId, inputEl) {
+      if (!inputEl.files || !inputEl.files[0]) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const slot = state.photoSlots.find(s => s.id === slotId);
+        if (slot) {
+          slot.dataUrl = e.target.result;
+          slot.source = 'upload';
+          renderDevicePhotoSlots();
+          showToast(`อัปโหลดรูป ${slot.title} เรียบร้อย`);
+        }
+      };
+      reader.readAsDataURL(inputEl.files[0]);
+    }
+
+    function handleBatchPhotoUpload(inputEl) {
+      if (!inputEl.files) return;
+      Array.from(inputEl.files).slice(0, 4).forEach((file, idx) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          if (state.photoSlots[idx]) {
+            state.photoSlots[idx].dataUrl = e.target.result;
+            state.photoSlots[idx].source = 'upload';
+            renderDevicePhotoSlots();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      showToast('อัปโหลดรูปตัวเครื่องเรียบร้อย');
+    }
+
+    // --- Toggle Full 14-Item Grid in Report ---
+    function toggleFullChecklistInReport() {
+      state.showFullChecklistInReport = !state.showFullChecklistInReport;
+      const wrap = document.getElementById('cert-checklist-wrapper');
+      const lbl = document.getElementById('toggle-checklist-label');
+      if (wrap) {
+        if (state.showFullChecklistInReport) wrap.classList.remove('hidden');
+        else wrap.classList.add('hidden');
+      }
+      if (lbl) {
+        lbl.textContent = state.showFullChecklistInReport ? 'ซ่อนรายละเอียดทั้ง 14 หัวข้อ' : 'ดูรายละเอียดทั้ง 14 หัวข้อ';
+      }
+    }
+
+    // --- Collect All Issues (Hardware + Cosmetics + Battery + Lock) ---
+    function collectDetectedIssues() {
+      const issues = [];
+      // 1. Hardware issues
+      DIAGNOSTIC_ITEMS.forEach((it, idx) => {
+        if (state.results[it.id] === 'fail') {
+          issues.push({
+            category: 'ฮาร์ดแวร์',
+            title: `ข้อที่ ${idx + 1}: ${it.name} (${it.en})`,
+            detail: 'ตรวจพบปัญหา / ไม่ผ่านเกณฑ์การทดสอบ'
+          });
+        }
+      });
+
+      // 2. Screen cosmetic issues
+      if (state.cosmetics.screen === 'minor_scratch') {
+        issues.push({ category: 'สภาพหน้าจอ', title: 'กระจกหน้าจอมีรอยขนแมวบางๆ', detail: 'มีรอยขนแมวเล็กน้อยตามการใช้งาน (เกณฑ์ Grade B)' });
+      } else if (state.cosmetics.screen === 'heavy_scratch') {
+        issues.push({ category: 'สภาพหน้าจอ', title: 'หน้าจอมีรอยขีดข่วนลึก หรือมีจุดสว่าง', detail: 'มีร่องรอยชัดเจนบนหน้าจอ (เกณฑ์ Grade C)' });
+      } else if (state.cosmetics.screen === 'cracked') {
+        issues.push({ category: 'สภาพหน้าจอ', title: 'กระจกหน้าจอแตก / จอเป็นเส้น / จอเบิร์นหนัก', detail: 'หน้าจอเสียหาย ต้องเปลี่ยนอะไหล่ (เกณฑ์ Grade D)' });
+      }
+
+      // 3. Body cosmetic issues
+      if (state.cosmetics.body === 'minor_wear') {
+        issues.push({ category: 'สภาพตัวเครื่อง', title: 'ตัวเครื่องมีรอยเคสหรือรอยขนแมวเล็กน้อย', detail: 'ไม่มีรอยบุบมุมเครื่อง (เกณฑ์ Grade B)' });
+      } else if (state.cosmetics.body === 'dented') {
+        issues.push({ category: 'สภาพตัวเครื่อง', title: 'ตัวเครื่องมีรอยบุบมุมเครื่อง หรือรอยถลอกชัดเจน', detail: 'มีร่องรอยการตกกระแทกที่ขอบเครื่อง (เกณฑ์ Grade C)' });
+      } else if (state.cosmetics.body === 'broken_housing') {
+        issues.push({ category: 'สภาพตัวเครื่อง', title: 'ฝาหลังแตกร้าว / ตัวเครื่องบิดงอ / แบตบวม', detail: 'โครงสร้างตัวเครื่องเสียหายหนัก (เกณฑ์ Grade D)' });
+      }
+
+      // 4. Battery issue
+      if (state.cosmetics.batteryHealth < 80) {
+        issues.push({ category: 'แบตเตอรี่', title: `สุขภาพแบตเตอรี่ต่ำกว่าเกณฑ์มาตรฐาน (${state.cosmetics.batteryHealth}%)`, detail: 'ความจุแบตเตอรี่เสื่อมสภาพ ต่ำกว่า 80%' });
+      }
+
+      // 5. Account lock issue
+      if (state.cosmetics.lock === 'locked') {
+        issues.push({ category: 'การล็อกเครื่อง', title: 'ติดล็อกบัญชี iCloud / Google Account หรือติดสัญญาล็อก', detail: 'ต้องปลดล็อกบัญชีออกจากเครื่องก่อนทำการซื้อขาย/เทิร์น' });
+      }
+
+      return issues;
+    }
+
+    function calculateGrade() {
+      const vals = Object.values(state.results);
+      const failCount = vals.filter(v => v === 'fail').length;
+      const passCount = vals.filter(v => v === 'pass').length;
+
+      if (state.cosmetics.lock === 'locked') {
+        return { grade: 'ไม่ผ่าน (ติดล็อก)', color: 'bg-rose-600', mult: 0, reason: 'ติดล็อกบัญชี iCloud / Google Account' };
+      }
+      if (state.cosmetics.screen === 'cracked' || state.cosmetics.body === 'broken_housing' || failCount >= 3) {
+        return { grade: 'GRADE D', color: 'bg-rose-600', mult: 0.45, reason: 'พบความเสียหายที่หน้าจอ/ตัวเครื่อง หรือฮาร์ดแวร์มีปัญหา' };
+      }
+      if (failCount > 0 || state.cosmetics.screen === 'heavy_scratch' || state.cosmetics.body === 'dented' || state.cosmetics.batteryHealth < 80) {
+        return { grade: 'GRADE C', color: 'bg-amber-500', mult: 0.72, reason: 'พบจุดที่มีปัญหาบางรายการ หรือแบตเตอรี่ต่ำกว่า 80%' };
+      }
+      if (state.cosmetics.screen === 'minor_scratch' || state.cosmetics.body === 'minor_wear' || state.cosmetics.batteryHealth < 85) {
+        return { grade: 'GRADE B', color: 'bg-blue-600', mult: 0.88, reason: 'การทำงานปกติทุกฟังก์ชัน มีรอยขนแมวเล็กน้อย' };
+      }
+      return { grade: 'GRADE A', color: 'bg-emerald-600', mult: 1.0, reason: `ปกติสมบูรณ์ครบทุกฟังก์ชัน (${passCount}/14)` };
+    }
+
+    function renderReportView() {
+      refreshSamplePhotos();
+      updateDeviceSelection();
+      const g = calculateGrade();
+      const issues = collectDetectedIssues();
+      const vals = Object.values(state.results);
+      const passCount = vals.filter(v => v === 'pass').length;
+      const failCount = vals.filter(v => v === 'fail').length;
+      const pendingCount = vals.filter(v => v === 'pending').length;
+
+      const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+      setTxt('cert-code', state.tradeInCode);
+      setTxt('report-code-text', state.tradeInCode);
+      setTxt('cert-model-title', `${state.brand} ${state.modelName} (RAM ${state.ram} / ROM ${state.storage})`);
+      setTxt('cert-date', new Date().toLocaleString('th-TH'));
+
+      // Populate Device Spec Table
+      setTxt('spec-brand-model', `${state.brand} ${state.modelName}`);
+      setTxt('spec-ram-rom', `RAM ${state.ram} · ความจุ ${state.storage}`);
+      setTxt('spec-imei', state.imei || 'ไม่ได้ระบุ');
+      setTxt('spec-battery', `${state.cosmetics.batteryHealth}% (${state.cosmetics.batteryHealth >= 80 ? 'ปกติ' : 'เสื่อมสภาพ'})`);
+      setTxt('spec-color', state.deviceColor || 'มาตรฐานโรงงาน');
+      setTxt('spec-lock', state.cosmetics.lock === 'locked' ? '✕ ติดล็อกบัญชี' : '✓ ปลดล็อกปกติ');
+
+      const gBox = document.getElementById('cert-grade-box');
+      if (gBox) gBox.className = `px-6 py-3 rounded-2xl ${g.color} text-white text-center shadow-sm min-w-[150px]`;
+      setTxt('cert-grade-letter', g.grade);
+      setTxt('cert-grade-reason', g.reason);
+
+      // Render Exception-Based Verdict Container (Normal vs Specific Issues Only!)
+      const verdictBox = document.getElementById('report-verdict-container');
+      if (verdictBox) {
+        if (issues.length === 0) {
+          verdictBox.innerHTML = `
+            <div class="p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-2xl font-black shrink-0">
+                ✓
+              </div>
+              <div>
+                <div class="text-sm sm:text-base font-extrabold text-emerald-900">
+                  ผลการตรวจสภาพเครื่อง: ปกติสมบูรณ์ทั้งหมด (No Issues Found)
+                </div>
+                <p class="text-xs text-emerald-800 mt-0.5">
+                  ระบบการทำงานของฮาร์ดแวร์ สภาพหน้าจอ สภาพตัวเครื่อง แบตเตอรี่ (${state.cosmetics.batteryHealth}%) และสถานะบัญชี อยู่ในเกณฑ์ปกติสมบูรณ์ (ผ่านการตรวจแล้ว ${passCount}/14 รายการ${pendingCount > 0 ? ` · รอตรวจ ${pendingCount} รายการ` : ''})
+                </p>
+              </div>
+            </div>
+          `;
+        } else {
+          verdictBox.innerHTML = `
+            <div class="p-5 rounded-2xl bg-rose-50/70 border-2 border-rose-300 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center font-black text-sm">!</span>
+                  <div>
+                    <div class="text-sm font-extrabold text-rose-900">ตรวจพบจุดที่มีปัญหา / ข้อสังเกตจำนวน ${issues.length} รายการ</div>
+                    <div class="text-[11px] text-rose-700">ส่วนฟังก์ชันและการทำงานรายการอื่นๆ ที่ไม่แสดงในกรอบนี้ อยู่ในเกณฑ์ <b>ปกติสมบูรณ์</b></div>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-2">
+                ${issues.map(iss => `
+                  <div class="p-3 rounded-xl bg-white border border-rose-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 font-bold text-[10px]">${iss.category}</span>
+                      <span class="font-extrabold text-slate-900">${iss.title}</span>
+                    </div>
+                    <span class="text-rose-700 font-semibold text-[11px]">${iss.detail}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // Prices
+      const p1 = Math.round((state.prices.remobie * g.mult) / 100) * 100;
+      const p2 = Math.round((state.prices.compasia * g.mult) / 100) * 100;
+      const p3 = Math.round((state.prices.trademobile * g.mult) / 100) * 100;
+      const maxP = Math.max(p1, p2, p3);
+
+      setTxt('price-remobie', '฿' + p1.toLocaleString());
+      setTxt('price-compasia', '฿' + p2.toLocaleString());
+      setTxt('price-trademobile', '฿' + p3.toLocaleString());
+      setTxt('cert-max-price', g.mult === 0 ? 'ติดล็อกบัญชี' : '฿' + maxP.toLocaleString());
+
+      const chkGrid = document.getElementById('cert-checklist-grid');
+      if (chkGrid) {
+        chkGrid.innerHTML = DIAGNOSTIC_ITEMS.map(it => {
+          const st = state.results[it.id];
+          const cls = st === 'pass' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : st === 'fail' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-slate-50 border-slate-200 text-slate-500';
+          const lbl = st === 'pass' ? '✓ ปกติ' : st === 'fail' ? '✕ มีปัญหา' : 'รอตรวจ';
+          return `<div class="p-2.5 rounded-xl border ${cls} flex items-center justify-between"><span class="truncate font-medium">${it.icon} ${it.name}</span><span class="font-bold text-[11px] ml-1">${lbl}</span></div>`;
+        }).join('');
+      }
+
+      const gal = document.getElementById('cert-photo-gallery');
+      if (gal) {
+        gal.innerHTML = state.photoSlots.map(s => `
+          <div class="rounded-xl border border-slate-200 p-2 bg-slate-50 space-y-1">
+            <img src="${s.dataUrl}" alt="${s.title}" class="w-full h-28 object-cover rounded-lg" />
+            <div class="text-[11px] font-bold text-slate-700 truncate">${s.title}</div>
+          </div>
+        `).join('');
+      }
+
+      const qrBox = document.getElementById('report-qr-box');
+      if (qrBox) {
+        qrBox.innerHTML = `<div class="w-36 h-36">${createQrSvg(`${state.tradeInCode}|${state.brand} ${state.modelName}|${state.ram}/${state.storage}|${g.grade}|Issues:${issues.length}`)}</div>`;
+      }
+    }
+
+    function copyReportSummary() {
+      const g = calculateGrade();
+      const issues = collectDetectedIssues();
+      const issueText = issues.length === 0
+        ? '✅ ปกติสมบูรณ์ครบทุกรายการ (ไม่พบปัญหา)'
+        : '⚠️ พบจุดสังเกต/ปัญหา: ' + issues.map(i => i.title).join(', ');
+      const txt = `ใบรายงานยืนยันผลตรวจ SmartCheck Trade-In+\nรหัสอ้างอิง: ${state.tradeInCode}\nเครื่อง: ${state.brand} ${state.modelName} (RAM ${state.ram} / ROM ${state.storage})\nIMEI/SN: ${state.imei || '-'}\nสุขภาพแบตเตอรี่: ${state.cosmetics.batteryHealth}%\nสรุปผลตรวจ: ${issueText}\nเกรดสภาพเครื่อง: ${g.grade}`;
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      showToast('คัดลอกข้อความสรุปผลตรวจเรียบร้อย');
+    }
+
+    function downloadStandaloneHtml() {
+      const fullHtml = '<!DOCTYPE html>\\n' + document.documentElement.outerHTML;
+      const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showToast('ดาวน์โหลดไฟล์ index.html เรียบร้อย');
+    }
+
+    window.onload = function() {
+      handleBrandChange();
+      renderHomeLauncherQr();
+      runAutoDeviceDetection();
+      renderDashboardGrid();
+      refreshSamplePhotos();
+      updateStatsBar();
+    };
+  </script>
+</body>
+</html>

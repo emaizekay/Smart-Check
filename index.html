@@ -130,14 +130,12 @@
       bottom: 0 !important;
       width: 100vw !important;
       height: 100% !important;
-      min-height: 100dvh !important;
+      min-height: 100lvh !important;
       margin: 0 !important;
       padding: 0 !important;
       z-index: 99999 !important;
       overflow: hidden !important;
       background-color: var(--fs-active-bg, #2F2D29) !important;
-      padding-top: env(safe-area-inset-top, 0px) !important;
-      padding-bottom: env(safe-area-inset-bottom, 0px) !important;
     }
 
     .touch-cell {
@@ -2657,15 +2655,33 @@
     }
 
     function setEdgeToEdgeScreenColor(hexColor) {
-      const hex = hexColor || '#F5F2EB';
-      document.documentElement.style.setProperty('--fs-active-bg', hex);
-      document.documentElement.style.setProperty('background-color', hex, 'important');
-      document.body.style.setProperty('background-color', hex, 'important');
-      // Force iOS Safari to re-read <meta name="theme-color"> for top & bottom bar tinting
-      let metaTheme = document.getElementById('dynamic-theme-color');
-      if (metaTheme) {
-        metaTheme.setAttribute('content', hex);
+      const rawHex = hexColor || '#F5F2EB';
+      // iOS Safari WebKit ignores pure #FFFFFF or #000000 in theme-color; use #FEFEFE and #020202 so top bar always tints!
+      const safariTintHex = rawHex.toUpperCase() === '#FFFFFF' ? '#FEFEFE' : (rawHex === '#000000' ? '#020202' : rawHex);
+
+      document.documentElement.style.setProperty('--earth-bg', safariTintHex);
+      document.documentElement.style.setProperty('--fs-active-bg', safariTintHex);
+      document.documentElement.style.setProperty('background-color', safariTintHex, 'important');
+      document.body.style.setProperty('background-color', safariTintHex, 'important');
+
+      const ov = document.getElementById('fullscreen-test-overlay');
+      if (ov) {
+        ov.style.setProperty('background-color', safariTintHex, 'important');
       }
+
+      // Remove and re-insert <meta name="theme-color"> in <head> so iOS WebKit triggers didChangeThemeColor() on every tap!
+      document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.remove());
+      const newMeta = document.createElement('meta');
+      newMeta.name = 'theme-color';
+      newMeta.id = 'dynamic-theme-color';
+      newMeta.content = safariTintHex;
+      document.head.appendChild(newMeta);
+
+      // Force iOS Safari top bar compositor to re-sample the top edge immediately
+      try {
+        window.scrollTo(0, 1);
+        window.scrollTo(0, 0);
+      } catch (e) {}
     }
 
     function requestTrueDeviceFullscreen(targetEl) {
@@ -2801,8 +2817,8 @@
         { name: 'สีแดง (Red)', hex: '#EF4444', text: 'text-white', pos: 'top-4 left-3' },
         { name: 'สีเขียว (Green)', hex: '#22C55E', text: 'text-white', pos: 'top-4 right-3' },
         { name: 'สีน้ำเงิน (Blue)', hex: '#3B82F6', text: 'text-white', pos: 'bottom-16 left-3' },
-        { name: 'สีขาว (White)', hex: '#FFFFFF', text: 'text-[#1F2937]', pos: 'bottom-16 right-3' },
-        { name: 'สีดำสนิท (Black)', hex: '#000000', text: 'text-white', pos: 'top-4 left-1/2 -translate-x-1/2' }
+        { name: 'สีขาว (White)', hex: '#FEFEFE', text: 'text-[#1F2937]', pos: 'bottom-16 right-3' },
+        { name: 'สีดำสนิท (Black)', hex: '#020202', text: 'text-white', pos: 'top-4 left-1/2 -translate-x-1/2' }
       ];
       const cIdx = state.rgbColorIndex % 5;
       state.rgbSeenColors[cIdx] = true;
@@ -2810,11 +2826,12 @@
       const cur = colors[cIdx];
       const digit = state.rgbSecretPin[cIdx % 4];
 
-      // Tint the entire iOS/Android status bar, bottom Safari bar, html, and body to the exact RGB test color!
+      // Tint the entire iOS/Android status bar, bottom Safari bar, html, body, and overlay to the exact RGB test color!
       setEdgeToEdgeScreenColor(cur.hex);
 
       ov.innerHTML = `
-        <div onclick="cycleFullscreenRgb()" style="position:fixed;top:-80px;bottom:-80px;left:0;right:0;background-color:${cur.hex};" class="flex flex-col items-center justify-center cursor-pointer ${cur.text}">
+        <div style="position:fixed;top:0;left:0;right:0;height:8px;background-color:${cur.hex};z-index:100001;pointer-events:none;"></div>
+        <div onclick="cycleFullscreenRgb()" style="position:fixed;top:0;bottom:0;left:0;right:0;width:100vw;height:100lvh;background-color:${cur.hex};" class="flex flex-col items-center justify-center cursor-pointer ${cur.text}">
           <span class="fixed ${cur.pos} text-sm font-mono font-extrabold px-2.5 py-1 rounded-lg border-2 border-current shadow-sm">
             เลขมุมจอ: ${digit}
           </span>

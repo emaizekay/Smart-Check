@@ -2,7 +2,11 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" id="dynamic-theme-color" content="#F5F2EB" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>SmartCheck Trade-In+ — ระบบตรวจเช็กสภาพมือถือและแท็บเล็ต</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
@@ -102,21 +106,38 @@
       --tw-gradient-to: #3D4B42 !important;
     }
 
-    /* True Edge-to-Edge Fullscreen Overlay (All Aspect Ratios 16:9, 19.5:9, 20:9, 4:3) */
+    /* True Edge-to-Edge Fullscreen Overlay (Covers iOS 18/26 Top & Bottom Translucent Bars via 100lvh + Theme-Color Sync) */
+    html.fs-lock-scroll,
+    body.fs-lock-scroll {
+      background-color: var(--fs-active-bg, #2F2D29) !important;
+      overflow: hidden !important;
+      overscroll-behavior: none !important;
+      width: 100vw !important;
+      height: 100% !important;
+      min-height: 100lvh !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    body.fs-lock-scroll > header,
+    body.fs-lock-scroll > main {
+      display: none !important;
+    }
     #fullscreen-test-overlay {
       position: fixed !important;
-      inset: 0 !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
       width: 100vw !important;
-      height: 100vh !important;
-      height: 100dvh !important;
+      height: 100% !important;
+      min-height: 100dvh !important;
       margin: 0 !important;
       padding: 0 !important;
       z-index: 99999 !important;
       overflow: hidden !important;
-    }
-    body.fs-lock-scroll {
-      overflow: hidden !important;
-      overscroll-behavior: none !important;
+      background-color: var(--fs-active-bg, #2F2D29) !important;
+      padding-top: env(safe-area-inset-top, 0px) !important;
+      padding-bottom: env(safe-area-inset-bottom, 0px) !important;
     }
 
     .touch-cell {
@@ -2596,6 +2617,15 @@
       }
     }
 
+    function setEdgeToEdgeScreenColor(hexColor) {
+      const hex = hexColor || '#F5F2EB';
+      document.documentElement.style.setProperty('--fs-active-bg', hex);
+      document.documentElement.style.backgroundColor = hex;
+      document.body.style.backgroundColor = hex;
+      const metaTheme = document.getElementById('dynamic-theme-color');
+      if (metaTheme) metaTheme.setAttribute('content', hex);
+    }
+
     function requestTrueDeviceFullscreen(targetEl) {
       const root = document.documentElement;
       const el = targetEl || root;
@@ -2616,6 +2646,8 @@
     function openFullscreenTouchTest() {
       const ov = document.getElementById('fullscreen-test-overlay');
       if (!ov) return;
+      setEdgeToEdgeScreenColor('#3B3631');
+      document.documentElement.classList.add('fs-lock-scroll');
       document.body.classList.add('fs-lock-scroll');
       ov.dataset.mode = 'touch';
       ov.classList.remove('hidden');
@@ -2627,7 +2659,9 @@
     function closeFullscreenOverlay() {
       const ov = document.getElementById('fullscreen-test-overlay');
       if (!ov) return;
+      document.documentElement.classList.remove('fs-lock-scroll');
       document.body.classList.remove('fs-lock-scroll');
+      setEdgeToEdgeScreenColor('#F5F2EB');
       ov.dataset.mode = '';
       ov.classList.add('hidden');
       ov.classList.remove('flex');
@@ -2645,19 +2679,21 @@
     function renderFullscreenTouchOverlay() {
       const ov = document.getElementById('fullscreen-test-overlay');
       if (!ov || ov.classList.contains('hidden')) return;
+      setEdgeToEdgeScreenColor('#3B3631');
       const count = state.touchCells.filter(Boolean).length;
       const pct = Math.round((count / 48) * 100);
-      // Dynamically match any screen aspect ratio (Portrait 6x8 vs Landscape/Foldable 8x6) with 0px outer gap so cells touch all 4 screen bezels!
-      const isLandscape = window.innerWidth > window.innerHeight;
+      const vw = (window.visualViewport && window.visualViewport.width) || window.innerWidth;
+      const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      const isLandscape = vw > vh;
       const cols = isLandscape ? 8 : 6;
       const rows = isLandscape ? 6 : 8;
 
       ov.innerHTML = `
-        <div style="width:100vw;height:100dvh;margin:0;padding:0;" class="relative w-screen h-screen flex flex-col bg-[#2F2D29] overflow-hidden">
+        <div style="position:fixed;inset:0;width:100vw;height:${vh}px;margin:0;padding:0;background:#3B3631;" class="flex flex-col overflow-hidden">
           <div id="fs-touch-grid"
                onpointermove="handleGridPointerMove(event)"
                ontouchmove="handleGridTouchMove(event)"
-               style="display:grid;grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr);width:100vw;height:100dvh;margin:0;padding:0;gap:0;"
+               style="display:grid;grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr);width:100vw;height:100%;margin:0;padding:0;gap:0;"
                class="w-full h-full select-none touch-none">
             ${state.touchCells.map((t, ci) => `
               <div data-cell="${ci}"
@@ -2671,12 +2707,10 @@
             `).join('')}
           </div>
           <div class="fixed inset-x-0 top-1/2 -translate-y-1/2 pointer-events-none flex justify-center px-3 z-20">
-            <div class="pointer-events-auto bg-[#2F2D29]/90 backdrop-blur-md text-[#FCFBF7] px-3.5 py-2 rounded-2xl border border-[#6E665E] shadow-xl flex flex-wrap items-center justify-center gap-2 text-xs">
-              <span>สัมผัสขอบจอ: <b id="fs-touch-pct" class="text-[#A8D5A5]">${pct}% (${count}/48)</b></span>
-              <button type="button" onclick="requestTrueDeviceFullscreen()" class="px-2.5 py-1 rounded-lg bg-[#587868] text-white font-bold">⛶ ซ่อนแถบเบราว์เซอร์</button>
-              <button type="button" onclick="openStandaloneFullWindow('touch')" class="px-2.5 py-1 rounded-lg bg-[#C58963] text-white font-bold">↗ เปิดแท็บไร้ขอบ</button>
-              <button type="button" onclick="autoSweepTouchGrid()" class="px-2.5 py-1 rounded-lg bg-white/15 text-white font-bold">กวาดครบ</button>
-              <button type="button" onclick="closeFullscreenOverlay()" class="px-2.5 py-1 rounded-lg bg-white/10 text-white/80 font-bold">ย่อ</button>
+            <div class="pointer-events-auto bg-[#2F2D29]/90 backdrop-blur-md text-[#FCFBF7] px-3.5 py-1.5 rounded-full border border-[#6E665E] shadow-xl flex items-center gap-2.5 text-xs">
+              <span>สัมผัส: <b id="fs-touch-pct" class="text-[#A8D5A5]">${pct}% (${count}/48)</b></span>
+              <button type="button" onclick="autoSweepTouchGrid()" class="px-2.5 py-1 rounded-full bg-[#587868] text-white font-bold">กวาดครบ</button>
+              <button type="button" onclick="closeFullscreenOverlay()" class="px-2.5 py-1 rounded-full bg-white/15 text-white font-bold">ออก</button>
             </div>
           </div>
         </div>
@@ -2686,6 +2720,7 @@
     function openFullscreenRgbTest() {
       const ov = document.getElementById('fullscreen-test-overlay');
       if (!ov) return;
+      document.documentElement.classList.add('fs-lock-scroll');
       document.body.classList.add('fs-lock-scroll');
       ov.dataset.mode = 'rgb';
       ov.classList.remove('hidden');
@@ -2705,47 +2740,48 @@
       const ov = document.getElementById('fullscreen-test-overlay');
       if (!ov || ov.classList.contains('hidden')) return;
       const colors = [
-        { name: 'สีแดง (Red) — จำเลขมุมซ้ายบน', hex: '#EF4444', text: 'text-white', pos: 'top-2 left-2' },
-        { name: 'สีเขียว (Green) — จำเลขมุมขวาบน', hex: '#22C55E', text: 'text-white', pos: 'top-2 right-2' },
-        { name: 'สีน้ำเงิน (Blue) — จำเลขมุมซ้ายล่าง', hex: '#3B82F6', text: 'text-white', pos: 'bottom-2 left-2' },
-        { name: 'สีขาว (White) — จำเลขมุมขวาล่าง', hex: '#FFFFFF', text: 'text-[#1F2937]', pos: 'bottom-2 right-2' },
-        { name: 'สีดำสนิท (Black) — เช็กแสงรั่วขอบจอ', hex: '#000000', text: 'text-white', pos: 'top-2 left-1/2 -translate-x-1/2' }
+        { name: 'สีแดง (Red)', hex: '#EF4444', text: 'text-white', pos: 'top-3 left-3' },
+        { name: 'สีเขียว (Green)', hex: '#22C55E', text: 'text-white', pos: 'top-3 right-3' },
+        { name: 'สีน้ำเงิน (Blue)', hex: '#3B82F6', text: 'text-white', pos: 'bottom-4 left-3' },
+        { name: 'สีขาว (White)', hex: '#FFFFFF', text: 'text-[#1F2937]', pos: 'bottom-4 right-3' },
+        { name: 'สีดำสนิท (Black)', hex: '#000000', text: 'text-white', pos: 'top-3 left-1/2 -translate-x-1/2' }
       ];
       const cIdx = state.rgbColorIndex % 5;
       state.rgbSeenColors[cIdx] = true;
       const seen = Object.keys(state.rgbSeenColors).length;
       const cur = colors[cIdx];
       const digit = state.rgbSecretPin[cIdx % 4];
+
+      // Tint the entire iOS/Android status bar, bottom Safari bar, html, and body to the exact RGB test color!
+      setEdgeToEdgeScreenColor(cur.hex);
+
       ov.innerHTML = `
-        <div onclick="cycleFullscreenRgb()" style="background-color:${cur.hex};width:100vw;height:100dvh;margin:0;padding:0;border-radius:0;" class="relative w-screen h-screen flex flex-col items-center justify-center cursor-pointer ${cur.text}">
+        <div onclick="cycleFullscreenRgb()" style="position:fixed;top:-60px;bottom:-60px;left:0;right:0;background-color:${cur.hex};" class="flex flex-col items-center justify-center cursor-pointer ${cur.text}">
           <span class="fixed ${cur.pos} text-sm font-mono font-extrabold px-2.5 py-1 rounded-lg border-2 border-current shadow-sm">
             เลขมุมจอ: ${digit}
           </span>
-          <div class="text-lg sm:text-xl font-extrabold text-center px-4">${cur.name}</div>
-          <div class="text-xs opacity-90 mt-1 text-center">แตะที่พื้นสีเพื่อสลับสีถัดไป (ดูแล้ว ${seen}/5 สี)</div>
-          <div class="mt-5 flex flex-wrap justify-center gap-2" onclick="event.stopPropagation()">
-            <button type="button" onclick="requestTrueDeviceFullscreen()" class="px-4 py-2 rounded-xl bg-black/60 text-white text-xs font-bold border border-white/25">
-              ⛶ ขยายเต็มจอไร้แถบ
-            </button>
-            <button type="button" onclick="openStandaloneFullWindow('rgb')" class="px-4 py-2 rounded-xl bg-black/60 text-white text-xs font-bold border border-white/25">
-              ↗ เปิดแท็บไร้ขอบ 100%
-            </button>
-            <button type="button" onclick="closeFullscreenOverlay()" class="px-5 py-2 rounded-xl bg-black/80 text-white text-xs font-extrabold border border-white/30 shadow-lg">
-              ${seen >= 5 ? '✓ ดูครบ 5 สีแล้ว — กรอกรหัส 4 หลัก' : 'ย่อกลับ'}
+          <div class="text-base font-extrabold text-center opacity-80">${cur.name} (${seen}/5) — แตะจอเพื่อเปลี่ยนสี</div>
+          <div class="mt-3" onclick="event.stopPropagation()">
+            <button type="button" onclick="closeFullscreenOverlay()" class="px-4 py-1.5 rounded-full bg-black/55 text-white text-xs font-bold border border-white/25">
+              ${seen >= 5 ? '✓ ดูครบ 5 สีแล้ว — กรอกรหัส 4 หลัก' : 'ออกจากโหมดเต็มจอ'}
             </button>
           </div>
         </div>
       `;
     }
 
-    // Re-layout fullscreen grid dynamically if user rotates phone/tablet or resizes screen
-    window.addEventListener('resize', () => {
+    // Re-layout fullscreen grid dynamically if user rotates phone/tablet or collapses iOS Safari toolbar
+    const handleViewportChange = () => {
       const ov = document.getElementById('fullscreen-test-overlay');
       if (ov && !ov.classList.contains('hidden')) {
         if (ov.dataset.mode === 'touch') renderFullscreenTouchOverlay();
         else if (ov.dataset.mode === 'rgb') renderFullscreenRgbOverlay();
       }
-    });
+    };
+    window.addEventListener('resize', handleViewportChange);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+    }
 
     // Opens a true top-level full-screen window if running inside a constrained preview iframe
     function openStandaloneFullWindow(mode) {

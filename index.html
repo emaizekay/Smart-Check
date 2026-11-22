@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" id="dynamic-theme-color" content="#F8FAFC" />
+  <meta name="theme-color" id="dynamic-theme-color" content="#F9F7F4" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="SmartCheck" />
-  <link rel="manifest" href='data:application/manifest+json,{"name":"SmartCheck Trade-In+ App","short_name":"SmartCheck","display":"standalone","start_url":".","background_color":"#F8FAFC","theme_color":"#0F172A"}' />
+  <link rel="manifest" href='data:application/manifest+json,{"name":"SmartCheck Trade-In+ App","short_name":"SmartCheck","display":"standalone","start_url":".","background_color":"#F9F7F4","theme_color":"#C4DCFF"}' />
   <title>SmartCheck Trade-In+ — ระบบตรวจเช็กสภาพมือถือและแท็บเล็ต</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
@@ -17,87 +17,143 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --modern-bg: #F8FAFC;
-      --modern-card: #FFFFFF;
-      --modern-subcard: #F1F5F9;
-      --modern-border: #E2E8F0;
-      --modern-text: #0F172A;
-      --modern-muted: #64748B;
-      --modern-primary: #0F172A;
-      --modern-primary-hover: #1E293B;
-      --modern-accent: #0D9488;
-      --modern-accent-hover: #0F766E;
-      --modern-accent-soft: #F0FDFA;
-      --modern-accent-border: #CCFBF1;
-      --modern-emerald: #059669;
-      --modern-amber: #D97706;
-      --modern-rose: #E11D48;
+      /* Exact 9-Swatch Pastel Palette from User Reference */
+      --p-butter: #FFF0CA;
+      --p-blush: #F6CBD5;
+      --p-sky: #C4DCFF;
+      --p-lavender: #EBCEFF;
+      --p-mint: #D4E9D8;
+      --p-peach: #FFDFBD;
+      --p-periwinkle: #C6CFE0;
+      --p-sage: #AFC3C4;
+      --p-mauve: #E2CDD9;
+      --p-canvas: #F9F7F4;
+      --p-card: #FFFFFF;
+      --p-ink: #2D3142;
+      --p-muted: #5F667A;
     }
     body {
       font-family: 'Inter', 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--modern-bg) !important;
-      color: var(--modern-text) !important;
+      background-color: var(--p-canvas) !important;
+      color: var(--p-ink) !important;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
     }
-    /* Modern Minimalist Surface System */
-    .bg-white { background-color: var(--modern-card) !important; }
-    .bg-slate-50 { background-color: #F8FAFC !important; }
-    .bg-slate-100 { background-color: var(--modern-subcard) !important; }
-    .bg-slate-200 { background-color: #E2E8F0 !important; color: #475569 !important; }
-    .border-slate-100, .border-slate-200 { border-color: var(--modern-border) !important; }
-    .border-slate-300 { border-color: #CBD5E1 !important; }
-    .text-slate-900, .text-slate-800 { color: var(--modern-text) !important; }
-    .text-slate-600, .text-slate-500 { color: var(--modern-muted) !important; }
-    .text-slate-400 { color: #94A3B8 !important; }
 
-    /* Sleek Modern Slate & Teal-Mint Primary Accents */
-    .bg-blue-600, .bg-indigo-600, .bg-blue-700 { background-color: var(--modern-primary) !important; }
-    .hover\:bg-blue-700:hover, .hover\:bg-indigo-700:hover, .hover\:bg-blue-800:hover { background-color: var(--modern-primary-hover) !important; }
-    .bg-blue-50, .bg-blue-50\/90, .bg-indigo-50, .bg-blue-100, .bg-indigo-100 { background-color: var(--modern-accent-soft) !important; }
-    .border-blue-100, .border-blue-200, .border-blue-300, .border-indigo-200, .border-indigo-300 { border-color: var(--modern-accent-border) !important; }
+    /* Soft Pastel Surfaces & Borders */
+    .bg-white { background-color: var(--p-card) !important; }
+    .bg-slate-50 { background-color: #F7F5F2 !important; }
+    .bg-slate-100 { background-color: #F2EFF6 !important; }
+    .bg-slate-200 { background-color: #E6E2EC !important; color: #52586A !important; }
+    .border-slate-100, .border-slate-200 { border-color: #E6E3EC !important; }
+    .border-slate-300 { border-color: var(--p-periwinkle) !important; }
+    .text-slate-900, .text-slate-800 { color: var(--p-ink) !important; }
+    .text-slate-600, .text-slate-500 { color: var(--p-muted) !important; }
+    .text-slate-400 { color: #8A90A2 !important; }
+
+    /* Primary Controls: Baby Sky Blue (#C4DCFF) & Misty Periwinkle (#C6CFE0) */
+    .bg-blue-600, .bg-indigo-600, .bg-blue-700, .bg-slate-900 {
+      background-color: var(--p-sky) !important;
+      color: #1F324D !important;
+      border: 1px solid #A8C8F5 !important;
+    }
+    .hover\:bg-blue-700:hover, .hover\:bg-indigo-700:hover, .hover\:bg-blue-800:hover, .hover\:bg-slate-800:hover {
+      background-color: #B0D0FF !important;
+      color: #18273D !important;
+    }
+    .bg-blue-50, .bg-blue-50\/90, .bg-indigo-50, .bg-blue-100, .bg-indigo-100, .bg-teal-50, .bg-teal-50\/80 {
+      background-color: #EFF5FF !important;
+    }
+    .border-blue-100, .border-blue-200, .border-blue-300, .border-indigo-200, .border-indigo-300, .border-teal-200, .border-teal-300 {
+      border-color: var(--p-sky) !important;
+    }
     .text-blue-600, .text-blue-700, .text-blue-800, .text-blue-900, .text-blue-950,
-    .text-indigo-600, .text-indigo-800, .text-indigo-950 { color: var(--modern-accent-hover) !important; }
+    .text-indigo-600, .text-indigo-800, .text-indigo-950, .text-teal-700, .text-teal-800 {
+      color: #2C4B73 !important;
+    }
 
-    /* Crisp Modern Emerald for Pass/Verified */
-    .bg-emerald-600, .bg-emerald-500 { background-color: var(--modern-accent) !important; }
-    .hover\:bg-emerald-700:hover { background-color: var(--modern-accent-hover) !important; }
-    .bg-emerald-50, .bg-emerald-50\/70, .bg-emerald-50\/30, .bg-emerald-100 { background-color: #ECFDF5 !important; }
-    .border-emerald-200, .border-emerald-300, .border-emerald-400 { border-color: #A7F3D0 !important; }
-    .text-emerald-600, .text-emerald-700, .text-emerald-800, .text-emerald-900, .text-emerald-950 { color: #047857 !important; }
+    /* Pass / Success / Verified: Pastel Mint Green (#D4E9D8) */
+    .bg-emerald-600, .bg-emerald-500 {
+      background-color: var(--p-mint) !important;
+      color: #1E4631 !important;
+      border: 1px solid #B0D6B8 !important;
+    }
+    .hover\:bg-emerald-700:hover {
+      background-color: #C0DFC6 !important;
+      color: #173827 !important;
+    }
+    .bg-emerald-50, .bg-emerald-50\/70, .bg-emerald-50\/30, .bg-emerald-100 {
+      background-color: #EDF7EF !important;
+    }
+    .border-emerald-200, .border-emerald-300, .border-emerald-400 {
+      border-color: #B8DCBF !important;
+    }
+    .text-emerald-600, .text-emerald-700, .text-emerald-800, .text-emerald-900, .text-emerald-950 {
+      color: #24573C !important;
+    }
 
-    /* Clean Modern Amber for Standby / Fair */
-    .bg-amber-500, .bg-amber-400 { background-color: #0F172A !important; color: #FFFFFF !important; }
-    .hover\:bg-amber-600:hover, .hover\:bg-amber-300:hover { background-color: #1E293B !important; color: #FFFFFF !important; }
-    .bg-amber-50, .bg-amber-100 { background-color: #FFFBEB !important; }
-    .border-amber-300 { border-color: #FDE68A !important; }
-    .text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900 { color: #B45309 !important; }
+    /* Secondary / Standby / Highlight: Soft Peach (#FFDFBD) & Butter Cream (#FFF0CA) */
+    .bg-amber-500, .bg-amber-400 {
+      background-color: var(--p-peach) !important;
+      color: #5E3A19 !important;
+      border: 1px solid #F2C99D !important;
+    }
+    .hover\:bg-amber-600:hover, .hover\:bg-amber-300:hover {
+      background-color: #F7D0A6 !important;
+      color: #4A2D12 !important;
+    }
+    .bg-amber-50, .bg-amber-100 {
+      background-color: var(--p-butter) !important;
+    }
+    .border-amber-300 {
+      border-color: #F0D99E !important;
+    }
+    .text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900 {
+      color: #6B4A1B !important;
+    }
 
-    /* Clean Modern Rose for Fail / Alert */
-    .bg-rose-600 { background-color: var(--modern-rose) !important; }
-    .hover\:bg-rose-700:hover { background-color: #BE123C !important; }
-    .bg-rose-50, .bg-rose-50\/30, .bg-rose-50\/70, .bg-rose-100 { background-color: #FFF1F2 !important; }
-    .border-rose-200, .border-rose-300 { border-color: #FECDD3 !important; }
-    .text-rose-600, .text-rose-700, .text-rose-800 { color: #BE123C !important; }
+    /* Fail / Alert / Warning: Blush Pink (#F6CBD5) */
+    .bg-rose-600 {
+      background-color: var(--p-blush) !important;
+      color: #6E2339 !important;
+      border: 1px solid #E8AFC0 !important;
+    }
+    .hover\:bg-rose-700:hover {
+      background-color: #EEB6C4 !important;
+      color: #591B2D !important;
+    }
+    .bg-rose-50, .bg-rose-50\/30, .bg-rose-50\/70, .bg-rose-100 {
+      background-color: #FDF0F3 !important;
+    }
+    .border-rose-200, .border-rose-300 {
+      border-color: var(--p-blush) !important;
+    }
+    .text-rose-600, .text-rose-700, .text-rose-800 {
+      color: #7D2A42 !important;
+    }
 
-    /* Unified Modern Dark Zinc Accents */
-    .bg-slate-900, .bg-slate-950, .bg-slate-900\/85, .bg-slate-900\/90 { background-color: #0F172A !important; }
-    .bg-slate-950\/80 { background-color: rgba(15, 23, 42, 0.72) !important; }
-    .bg-slate-800 { background-color: #1E293B !important; border-color: #334155 !important; color: #E2E8F0 !important; }
+    /* Pastel Lavender (#EBCEFF), Mauve (#E2CDD9) & Dusty Sage (#AFC3C4) for Banners & Modals */
+    .bg-slate-950\/80 { background-color: rgba(45, 49, 66, 0.45) !important; }
+    .bg-slate-800 { background-color: var(--p-periwinkle) !important; border-color: #B4C0D6 !important; color: #2D3142 !important; }
     .from-slate-900, .from-emerald-900, .from-indigo-900 {
-      --tw-gradient-from: #0F172A !important;
-      --tw-gradient-to: rgb(15 23 42 / 0) !important;
+      --tw-gradient-from: #E2CDD9 !important;
+      --tw-gradient-to: rgb(226 205 217 / 0) !important;
       --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
     }
     .via-indigo-950, .via-teal-900, .via-blue-900 {
-      --tw-gradient-to: rgb(30 41 59 / 0) !important;
-      --tw-gradient-stops: var(--tw-gradient-from), #1E293B, var(--tw-gradient-to) !important;
+      --tw-gradient-to: rgb(198 207 224 / 0) !important;
+      --tw-gradient-stops: var(--tw-gradient-from), #C6CFE0, var(--tw-gradient-to) !important;
     }
     .to-slate-900, .to-blue-950, .to-indigo-950 {
-      --tw-gradient-to: #0F172A !important;
+      --tw-gradient-to: #AFC3C4 !important;
     }
-    .accent-blue-600, .accent-emerald-600 { accent-color: #0D9488 !important; }
-    .ring-blue-600, .ring-blue-500, .ring-cyan-400 { --tw-ring-color: #0D9488 !important; }
+    /* Ensure text inside pastel-converted banners/modals stays crisp dark charcoal */
+    .from-slate-900.text-white, .from-emerald-900.text-white, .bg-slate-900.text-white,
+    .bg-\[\#0F172A\].text-white {
+      color: #2D3142 !important;
+    }
+    .accent-blue-600, .accent-emerald-600 { accent-color: #8CA8C8 !important; }
+    .ring-blue-600, .ring-blue-500, .ring-cyan-400 { --tw-ring-color: #AFC3C4 !important; }
 
     /* True Edge-to-Edge Fullscreen Overlay (Covers iOS 18/26 Top & Bottom Translucent Bars via 100lvh + Theme-Color Sync) */
     html.fs-lock-scroll,
@@ -157,9 +213,9 @@
       transition: background-color 0.1s ease, transform 0.08s ease;
     }
     .touch-cell.touched {
-      background-color: #0D9488 !important;
+      background-color: #D4E9D8 !important; color: #1E4631 !important;
       color: #FFFFFF !important;
-      border-color: #0F766E !important;
+      border-color: #A4CCA9 !important;
       transform: scale(0.95);
     }
     @keyframes pulse-ring {
@@ -183,37 +239,37 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- App Header (Modern Minimalist Glass / Deep Slate) -->
-  <header class="bg-[#0F172A]/95 backdrop-blur-md text-white border-b border-slate-800 sticky top-0 z-30 no-print">
+  <!-- App Header (Soft Pastel Gradient: Sky #C4DCFF -> Mint #D4E9D8 -> Mauve #E2CDD9) -->
+  <header style="background: linear-gradient(135deg, #C4DCFF 0%, #D4E9D8 52%, #E2CDD9 100%);" class="backdrop-blur-md text-[#2D3142] border-b border-[#C6CFE0] sticky top-0 z-30 no-print">
     <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-600 text-white flex items-center justify-center shadow-sm">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        <div style="background-color:#FFFFFF;" class="w-9 h-9 rounded-xl text-[#2C4B73] border border-[#C6CFE0] flex items-center justify-center shadow-sm">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 id="app-title" class="text-base sm:text-lg font-bold tracking-tight text-white">SmartCheck Pro</h1>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-400/30 font-semibold">Precision Grading</span>
+            <h1 id="app-title" class="text-base sm:text-lg font-extrabold tracking-tight text-[#2D3142]">SmartCheck Pro</h1>
+            <span style="background-color:#FFF0CA;color:#6B4A1B;border-color:#F0D99E;" class="text-[10px] px-2 py-0.5 rounded-full border font-bold">Pastel Edition</span>
           </div>
-          <p id="app-subtitle" class="text-[11px] text-slate-400">ระบบตรวจสภาพและประเมินเกรดมือถือมาตรฐานสากล</p>
+          <p id="app-subtitle" class="text-[11px] text-[#4E5568] font-medium">ระบบตรวจสภาพและประเมินเกรดมือถือมาตรฐานสากล</p>
         </div>
       </div>
 
-      <!-- Minimalist Pill Navigation -->
-      <nav class="flex flex-wrap items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
-        <button id="nav-home" onclick="switchView('home')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-white text-slate-900 shadow-sm">
+      <!-- Soft Pastel Pill Navigation -->
+      <nav class="flex flex-wrap items-center gap-1 bg-white/60 backdrop-blur-sm p-1 rounded-xl border border-white/80 shadow-sm">
+        <button id="nav-home" onclick="switchView('home')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-[#2D3142] shadow-sm">
           1. ข้อมูลเครื่อง
         </button>
-        <button id="nav-runner" onclick="switchView('runner')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/10">
+        <button id="nav-runner" onclick="switchView('runner')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-[#4E5568] hover:bg-white/70">
           2. ตรวจระบบ (<span id="nav-progress-badge">0/15</span>)
         </button>
-        <button id="nav-handoff" onclick="switchView('handoff')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/10">
+        <button id="nav-handoff" onclick="switchView('handoff')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-[#4E5568] hover:bg-white/70">
           2-Factor ส่งผล
         </button>
-        <button id="nav-cosmetic" onclick="switchView('cosmetic')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/10">
+        <button id="nav-cosmetic" onclick="switchView('cosmetic')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-[#4E5568] hover:bg-white/70">
           3. สภาพภายนอก
         </button>
-        <button id="nav-report" onclick="switchView('report')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/10">
+        <button id="nav-report" onclick="switchView('report')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-[#4E5568] hover:bg-white/70">
           4. ใบรายงาน
         </button>
       </nav>
@@ -585,20 +641,20 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           <!-- Left: 2-Factor OTP Code & QR Code on Tested Phone Screen -->
-          <div class="lg:col-span-5 bg-[#0F172A] text-white rounded-3xl p-6 flex flex-col items-center text-center space-y-3 border border-[#524B44]">
-            <span class="px-3 py-0.5 rounded-full bg-white/15 text-[#E8F0EC] border border-white/20 text-[11px] font-bold">
+          <div class="lg:col-span-5 bg-[#EBCEFF]/50 text-[#2D3142] rounded-3xl p-6 flex flex-col items-center text-center space-y-3 border border-[#E2CDD9]">
+            <span class="px-3 py-0.5 rounded-full bg-white/15 text-[#2D3142] border border-white/20 text-[11px] font-bold">
               2-Factor App-to-Web Pairing
             </span>
-            <div class="w-full py-2.5 px-4 rounded-2xl bg-black/25 border border-white/15">
-              <div class="text-[10px] uppercase tracking-wider text-white/75">รหัส 2-Factor 6 หลัก (กรอกบนหน้าเว็บรับผล)</div>
-              <div id="handoff-2fa-pin" class="font-mono font-black text-2xl sm:text-3xl text-[#A8D5A5] tracking-widest mt-0.5">842-915</div>
+            <div class="w-full py-2.5 px-4 rounded-2xl bg-white/80 border border-[#C6CFE0]">
+              <div class="text-[10px] uppercase tracking-wider text-[#5F667A]">รหัส 2-Factor 6 หลัก (กรอกบนหน้าเว็บรับผล)</div>
+              <div id="handoff-2fa-pin" class="font-mono font-black text-2xl sm:text-3xl text-[#1E4631] tracking-widest mt-0.5">842-915</div>
             </div>
             <div style="background-color:#FFFFFF !important;" class="p-3.5 rounded-3xl shadow-lg w-52 h-52 flex items-center justify-center">
               <div id="handoff-qr-box" class="w-44 h-44 flex items-center justify-center"></div>
             </div>
             <div>
-              <div class="text-[11px] text-white/75">รหัสใบงาน (Session ID)</div>
-              <div id="handoff-token-code" class="font-mono font-black text-xs text-[#E8F0EC] tracking-wider mt-0.5">-</div>
+              <div class="text-[11px] text-[#5F667A]">รหัสใบงาน (Session ID)</div>
+              <div id="handoff-token-code" class="font-mono font-black text-xs text-[#2D3142] tracking-wider mt-0.5">-</div>
             </div>
           </div>
 
@@ -645,15 +701,15 @@
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">โหมดเครื่อง Standby</span>
-                <span id="standby-sync-status" class="text-xs text-emerald-300 font-bold">● พร้อมถ่ายรูปเครื่องที่ถูกประเมินและสรุปเกรดภายนอก</span>
+                <span id="standby-sync-status" class="text-xs text-[#24573C] font-bold">● พร้อมถ่ายรูปเครื่องที่ถูกประเมินและสรุปเกรดภายนอก</span>
               </div>
-              <h3 id="standby-device-headline" class="text-sm sm:text-base font-extrabold text-white mt-0.5">
+              <h3 id="standby-device-headline" class="text-sm sm:text-base font-extrabold text-[#2D3142] mt-0.5">
                 กำลังประเมินภายนอกและถ่ายรูปตัวเครื่อง: รอระบุรุ่นเครื่อง
               </h3>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2 text-xs">
-            <input id="standby-import-token" type="text" placeholder="กรอกรหัส 2-Factor 6 หลัก (เช่น 842-915) หรือรหัสซิงก์..." class="rounded-xl bg-white/15 border border-white/25 px-3 py-2 text-white font-mono text-xs placeholder-white/60 w-64 focus:outline-none" />
+            <input id="standby-import-token" type="text" placeholder="กรอกรหัส 2-Factor 6 หลัก (เช่น 842-915) หรือรหัสซิงก์..." class="rounded-xl bg-white border border-[#C6CFE0] px-3 py-2 text-[#2D3142] font-mono text-xs placeholder-[#8A90A2] w-64 focus:outline-none" />
             <button type="button" onclick="importHandoffTokenFromInput()" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold transition">
               🔐 ยืนยัน 2-Factor &amp; รับผล
             </button>
@@ -1101,7 +1157,7 @@
   <!-- Live API Catalog & 4-Source Price Sync Modal -->
   <div id="catalog-sync-modal" onclick="closeCatalogSyncModal()" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 no-print">
     <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-2xl w-full overflow-hidden" onclick="event.stopPropagation()">
-      <div class="px-5 py-4 bg-gradient-to-r from-[#4F6B5B] to-[#6B7F6E] text-white flex items-center justify-between">
+      <div class="px-5 py-4 bg-[#C4DCFF] text-[#2D3142] border-b border-[#A8C8F5] flex items-center justify-between">
         <h3 class="text-sm sm:text-base font-extrabold">จัดการฐานข้อมูลรุ่น &amp; ผูกบัญชี Google Sheets</h3>
         <button onclick="closeCatalogSyncModal()" class="text-white/80 hover:text-white text-xs font-bold">✕ ปิด</button>
       </div>
@@ -1643,8 +1699,8 @@
         }
         if (btn) {
           btn.className = v === viewName
-            ? 'px-3 py-1.5 rounded-xl text-xs font-bold transition bg-white text-blue-700 shadow-sm'
-            : 'px-3 py-1.5 rounded-xl text-xs font-semibold transition text-blue-100 hover:bg-white/10';
+            ? 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white text-[#2D3142] shadow-sm'
+            : 'px-3 py-1.5 rounded-lg text-xs font-semibold transition text-[#4E5568] hover:bg-white/70';
         }
       });
 
@@ -3438,7 +3494,7 @@
     }
 
     function setEdgeToEdgeScreenColor(hexColor) {
-      const rawHex = hexColor || '#F8FAFC';
+      const rawHex = hexColor || '#F9F7F4';
       // iOS Safari WebKit ignores pure #FFFFFF or #000000 in theme-color; use #FEFEFE and #020202 so top bar always tints!
       const safariTintHex = rawHex.toUpperCase() === '#FFFFFF' ? '#FEFEFE' : (rawHex === '#000000' ? '#020202' : rawHex);
 
@@ -3502,7 +3558,7 @@
       if (!ov) return;
       document.documentElement.classList.remove('fs-lock-scroll');
       document.body.classList.remove('fs-lock-scroll');
-      setEdgeToEdgeScreenColor('#F8FAFC');
+      setEdgeToEdgeScreenColor('#F9F7F4');
       ov.dataset.mode = '';
       ov.classList.add('hidden');
       ov.classList.remove('flex');
@@ -3555,7 +3611,7 @@
           </div>
           <div class="fixed inset-x-0 top-1/2 -translate-y-1/2 pointer-events-none flex justify-center px-3 z-20">
             <div class="pointer-events-auto bg-[#2F2D29]/90 backdrop-blur-md text-[#FCFBF7] px-3.5 py-1.5 rounded-full border border-[#6E665E] shadow-xl flex items-center gap-2.5 text-xs">
-              <span>สัมผัส: <b id="fs-touch-pct" class="text-[#A8D5A5]">${pct}% (${count}/48)</b></span>
+              <span>สัมผัส: <b id="fs-touch-pct" class="text-[#1E4631]">${pct}% (${count}/48)</b></span>
               <button type="button" onclick="autoSweepTouchGrid()" class="px-2.5 py-1 rounded-full bg-[#587868] text-white font-bold">กวาดครบ</button>
               <button type="button" onclick="closeFullscreenOverlay()" class="px-2.5 py-1 rounded-full bg-white/15 text-white font-bold">ออก</button>
             </div>
@@ -3862,7 +3918,7 @@
       ov.classList.add('flex');
       requestTrueDeviceFullscreen(ov);
       ov.innerHTML = `
-        <div onclick="closeFullscreenOverlay()" style="position:fixed;inset:0;width:100vw;height:100lvh;background:#020202;" class="flex flex-col items-center justify-center p-6 text-center cursor-pointer text-white/75">
+        <div onclick="closeFullscreenOverlay()" style="position:fixed;inset:0;width:100vw;height:100lvh;background:#020202;" class="flex flex-col items-center justify-center p-6 text-center cursor-pointer text-[#5F667A]">
           <div class="max-w-sm space-y-2 pointer-events-none">
             <div class="text-sm font-bold text-white/80">ทดสอบจอ OLED ดำสนิท vs จอเทียบ LCD</div>
             <p class="text-xs text-white/55">
@@ -3976,24 +4032,24 @@
       c.width = 480;
       c.height = 360;
       const ctx = c.getContext('2d');
-      ctx.fillStyle = '#F1F5F9';
+      ctx.fillStyle = '#F9F7F4';
       ctx.fillRect(0, 0, 480, 360);
-      ctx.strokeStyle = '#CBD5E1';
+      ctx.strokeStyle = '#C6CFE0';
       ctx.lineWidth = 3;
       ctx.strokeRect(150, 26, 180, 264);
-      ctx.fillStyle = '#0F172A';
+      ctx.fillStyle = '#C4DCFF';
       ctx.fillRect(158, 38, 164, 240);
-      ctx.fillStyle = '#FCFBF7';
+      ctx.fillStyle = '#2D3142';
       ctx.font = 'bold 14px Prompt, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(title, 240, 145);
       ctx.font = '12px Inter, sans-serif';
-      ctx.fillStyle = '#E2ECE7';
+      ctx.fillStyle = '#4E5568';
       ctx.fillText(`${state.brand} ${state.modelName}`, 240, 172);
       ctx.fillText(`RAM ${state.ram} / ROM ${state.storage}`, 240, 192);
-      ctx.fillStyle = '#0D9488';
+      ctx.fillStyle = '#E2CDD9';
       ctx.fillRect(0, 310, 480, 50);
-      ctx.fillStyle = '#E8F0EC';
+      ctx.fillStyle = '#2D3142';
       ctx.font = 'bold 12px monospace';
       ctx.fillText(`${state.tradeInCode} · แบต ${state.cosmetics.batteryHealth}%`, 240, 340);
       return c.toDataURL('image/png');

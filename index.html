@@ -277,6 +277,25 @@
                 </div>
               </div>
 
+              <!-- Auto-Detected QR Scanning Device Banner -->
+              <div id="detected-device-banner" class="p-3.5 rounded-2xl bg-teal-50/80 border border-teal-200 space-y-2 text-xs">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-slate-900 text-teal-300 inline-flex items-center justify-center shrink-0">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    </span>
+                    <div>
+                      <div class="text-[10px] font-bold uppercase tracking-wider text-teal-700">เครื่องที่สแกน QR เข้ามาตรวจสอบ (Auto-Detected Device)</div>
+                      <div id="detected-model-headline" class="font-extrabold text-slate-900 text-xs sm:text-sm">กำลังตรวจสอบรุ่นของอุปกรณ์ที่เปิดหน้าเว็บนี้...</div>
+                    </div>
+                  </div>
+                  <button type="button" onclick="autoSyncLatestCatalogAndPrices(false)" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-semibold text-[11px] shadow-sm transition">
+                    รีเฟรชรุ่น &amp; ราคาล่าสุด
+                  </button>
+                </div>
+                <div id="detected-candidate-chips" class="hidden flex-wrap items-center gap-1.5 pt-1 border-t border-teal-200/70"></div>
+              </div>
+
               <!-- Form Box -->
               <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3.5 text-xs">
 
@@ -286,7 +305,8 @@
                   <div>
                     <label for="select-brand" class="block text-slate-700 font-bold mb-1">1. ยี่ห้อ (Brand)</label>
                     <select id="select-brand" onchange="handleBrandChange()" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="Apple" selected>Apple (iPhone / iPad)</option>
+                      <option value="" selected>-- เลือกยี่ห้อ (หรือรอระบบตรวจจับอัตโนมัติ) --</option>
+                      <option value="Apple">Apple (iPhone / iPad)</option>
                       <option value="Samsung">Samsung Galaxy</option>
                       <option value="OPPO">OPPO</option>
                       <option value="Vivo">Vivo</option>
@@ -421,9 +441,9 @@
                 <svg class="w-10 h-14 text-slate-800" viewBox="0 0 24 32" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="1.5" width="18" height="29" rx="3.5" fill="#FCFBF7"/><rect x="5.5" y="4" width="6" height="6" rx="1.5" fill="#587868"/><circle cx="7.5" cy="6" r="0.9" fill="#FFF"/><circle cx="9.8" cy="7.8" r="0.9" fill="#FFF"/><line x1="9" y1="27.5" x2="15" y2="27.5" stroke-width="1.8" stroke-linecap="round"/></svg>
               </div>
               <div class="min-w-0 flex-1">
-                <div id="remobie-card-brand" class="text-sm font-bold text-slate-600">Apple</div>
-                <div id="remobie-card-model" class="text-base sm:text-lg font-extrabold text-emerald-700 truncate">iPhone 12 Pro</div>
-                <div id="remobie-card-spec" class="text-[11px] text-slate-500 mt-0.5">RAM 6GB · ROM 128GB</div>
+                <div id="remobie-card-brand" class="text-sm font-bold text-slate-600">รอตรวจจับยี่ห้อ</div>
+                <div id="remobie-card-model" class="text-base sm:text-lg font-extrabold text-emerald-700 truncate">กรุณาเลือกหรือสแกน QR บนเครื่องที่จะตรวจ</div>
+                <div id="remobie-card-spec" class="text-[11px] text-slate-500 mt-0.5">ระบบจะดึงรุ่นและราคาล่าสุดอัตโนมัติ</div>
               </div>
             </div>
 
@@ -601,7 +621,7 @@
                 <span id="standby-sync-status" class="text-xs text-emerald-300 font-bold">● พร้อมถ่ายรูปเครื่องที่ถูกประเมินและสรุปเกรดภายนอก</span>
               </div>
               <h3 id="standby-device-headline" class="text-sm sm:text-base font-extrabold text-white mt-0.5">
-                กำลังประเมินภายนอกและถ่ายรูปตัวเครื่อง: Apple iPhone 15 Pro Max
+                กำลังประเมินภายนอกและถ่ายรูปตัวเครื่อง: รอระบุรุ่นเครื่อง
               </h3>
             </div>
           </div>
@@ -809,7 +829,7 @@
                 <span class="px-2.5 py-0.5 rounded-md bg-slate-900 text-white text-xs font-bold tracking-wide">ใบรายงานยืนยันผลการตรวจสภาพเครื่อง</span>
                 <span id="cert-code" class="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">TRD-20261116-8842</span>
               </div>
-              <h2 id="cert-model-title" class="text-xl sm:text-2xl font-black text-slate-900 pt-1">Apple iPhone 15 Pro Max</h2>
+              <h2 id="cert-model-title" class="text-xl sm:text-2xl font-black text-slate-900 pt-1">รอระบุรุ่นตัวเครื่อง</h2>
               <p class="text-xs text-slate-500">
                 วันที่ออกใบรายงาน: <span id="cert-date" class="font-semibold text-slate-700">-</span>
               </p>
@@ -1453,10 +1473,10 @@
 
     const state = {
       currentView: 'home',
-      brand: 'Apple',
-      modelName: 'iPhone 15 Pro Max',
-      ram: '8GB',
-      storage: '256GB',
+      brand: '',
+      modelName: '',
+      ram: 'ไม่ระบุ',
+      storage: '128GB',
       imei: '',
       deviceColor: '',
       prices: { remobie: 28500, yellobe: 28200, compasia: 27900, trademobile: 27500 },
@@ -1494,10 +1514,12 @@
         water: 'dry'
       },
       partsAudit: {
-        display: 'genuine_orig',   // genuine_orig | genuine_replaced | fake_display
+        display: 'genuine_orig',   // genuine_orig | genuine_replaced | ic_swapped | fake_display
         battery: 'genuine_orig',   // genuine_orig | genuine_replaced | unknown_part
         camera: 'genuine_orig',    // genuine_orig | genuine_replaced | unknown_part
         board: 'genuine_orig',     // genuine_orig | no_truetone_or_unverified
+        autoBrightness: 'ok',      // ok | missing_or_no_react
+        bezelChin: 'ok',           // ok | thick_or_raised
         measuredHz: 0,
         p3Gamut: false,
         hdrSupport: false,
@@ -1599,9 +1621,13 @@
       handleModelChange();
     }
 
-    function populateModelOptionsForBrand(brandVal, filterQuery) {
+    function populateModelOptionsForBrand(brandVal, filterQuery, preselectName) {
       const modelSel = document.getElementById('input-model');
       if (!modelSel) return;
+      if (!brandVal) {
+        modelSel.innerHTML = `<option value="" selected>-- กรุณาเลือกยี่ห้อก่อน (หรือสแกน QR บนเครื่องที่จะตรวจ) --</option><option value="custom">✏️ พิมพ์ระบุรุ่นด้วยตัวเอง</option>`;
+        return;
+      }
       const list = BRAND_MODELS_CATALOG[brandVal] || [];
       const q = (filterQuery || '').trim().toLowerCase();
       const filtered = q
@@ -1614,11 +1640,16 @@
         : list;
 
       const itemsToRender = filtered.length > 0 ? filtered : list;
-      modelSel.innerHTML = itemsToRender.map((m, idx) => {
+      const targetName = preselectName || '';
+      const placeholderOpt = (!q && !targetName)
+        ? `<option value="" selected>-- เลือกรุ่น ${brandVal} (${itemsToRender.length} รุ่นล่าสุด) --</option>`
+        : '';
+
+      modelSel.innerHTML = placeholderOpt + itemsToRender.map((m, idx) => {
         const p3 = m.prices[3] || Math.round((m.prices[0] + m.prices[1]) / 2);
         const label = m.modelNums ? `${m.name} (${m.modelNums.split(',')[0].trim()})` : m.name;
-        const isDefault = !q && brandVal === 'Apple' && m.name === 'iPhone 12 Pro';
-        return `<option value="${m.name}|${m.ram}|${m.rom}|${m.prices[0]}|${m.prices[1]}|${m.prices[2]}|${p3}" ${isDefault || (q && idx === 0) ? 'selected' : ''}>${label}</option>`;
+        const isSelected = (targetName && m.name.toLowerCase() === targetName.toLowerCase()) || (q && idx === 0);
+        return `<option value="${m.name}|${m.ram}|${m.rom}|${m.prices[0]}|${m.prices[1]}|${m.prices[2]}|${p3}" ${isSelected ? 'selected' : ''}>${label}</option>`;
       }).join('') + `<option value="custom">✏️ ไม่พบรุ่นในรายการ (พิมพ์ระบุรุ่นเอง)</option>`;
     }
 
@@ -1643,6 +1674,9 @@
           customModelInp.focus();
         }
         if (specHint) specHint.textContent = '';
+      } else if (!modelSel.value) {
+        if (customModelInp) customModelInp.classList.add('hidden');
+        if (specHint) specHint.textContent = 'ระบบพร้อมดึงสเปกและราคาล่าสุดทันทีที่เลือกรุ่นหรือตรวจจับจากเครื่องที่สแกน QR';
       } else {
         if (customModelInp) customModelInp.classList.add('hidden');
         const parts = modelSel.value.split('|');
@@ -1701,7 +1735,7 @@
       if (brandSel) {
         state.brand = brandSel.value === 'custom'
           ? (customBrandInp && customBrandInp.value.trim() ? customBrandInp.value.trim() : 'ไม่ระบุยี่ห้อ')
-          : brandSel.value;
+          : (brandSel.value || '');
       }
 
       const modelSel = document.getElementById('input-model');
@@ -1709,6 +1743,8 @@
       if (modelSel) {
         if (modelSel.value === 'custom') {
           state.modelName = customModelInp && customModelInp.value.trim() ? customModelInp.value.trim() : 'รุ่นที่ระบุเอง';
+        } else if (!modelSel.value) {
+          state.modelName = '';
         } else {
           const parts = modelSel.value.split('|');
           state.modelName = parts[0];
@@ -1833,6 +1869,57 @@
       }
     }
 
+    function applyDetectedBrandAndModel(brand, modelName) {
+      const brandSel = document.getElementById('select-brand');
+      if (brandSel && brand) {
+        brandSel.value = brand;
+        populateModelOptionsForBrand(brand, '', modelName);
+        handleModelChange();
+        renderDashboardGrid();
+      }
+    }
+
+    function matchCatalogByHardwareCode(rawCode) {
+      if (!rawCode) return null;
+      const needle = rawCode.trim().toLowerCase();
+      for (const brand of Object.keys(BRAND_MODELS_CATALOG)) {
+        for (const item of BRAND_MODELS_CATALOG[brand]) {
+          if (item.modelNums && item.modelNums.toLowerCase().includes(needle)) {
+            return { brand, name: item.name, code: rawCode };
+          }
+          if (item.name.toLowerCase() === needle || item.name.toLowerCase().includes(needle)) {
+            return { brand, name: item.name, code: rawCode };
+          }
+        }
+      }
+      return null;
+    }
+
+    function getIosCandidatesByScreen(w, h, dpr) {
+      const key = `${w}x${h}@${dpr}`;
+      const map = {
+        '440x956@3': ['iPhone 18 Pro Max', 'iPhone 17 Pro Max', 'iPhone 16 Pro Max'],
+        '402x874@3': ['iPhone 18 Pro', 'iPhone 17 Pro', 'iPhone 16 Pro'],
+        '430x932@3': ['iPhone 16 Plus', 'iPhone 15 Pro Max', 'iPhone 15 Plus', 'iPhone 14 Pro Max'],
+        '393x852@3': ['iPhone 17', 'iPhone 16', 'iPhone 15 Pro', 'iPhone 15', 'iPhone 14 Pro'],
+        '428x926@3': ['iPhone 14 Plus', 'iPhone 13 Pro Max', 'iPhone 12 Pro Max'],
+        '390x844@3': ['iPhone 16e', 'iPhone 14', 'iPhone 13 Pro', 'iPhone 13', 'iPhone 12 Pro', 'iPhone 12'],
+        '414x896@3': ['iPhone 11 Pro Max', 'iPhone XS Max'],
+        '414x896@2': ['iPhone 11', 'iPhone XR'],
+        '375x812@3': ['iPhone 13 mini', 'iPhone 12 mini', 'iPhone 11 Pro', 'iPhone XS', 'iPhone X'],
+        '375x667@2': ['iPhone SE (3rd generation)', 'iPhone SE (2nd generation)', 'iPhone 8'],
+        '414x736@3': ['iPhone 8 Plus'],
+        '1032x1376@2': ['iPad Pro 13-inch (M4)'],
+        '1024x1366@2': ['iPad Pro 12.9-inch (6th gen / M2)', 'iPad Pro 12.9-inch (5th gen / M1)', 'iPad Air 13-inch (M2)'],
+        '834x1210@2': ['iPad Pro 11-inch (M4)'],
+        '834x1194@2': ['iPad Pro 11-inch (4th gen / M2)', 'iPad Pro 11-inch (3rd gen / M1)'],
+        '820x1180@2': ['iPad Air 11-inch (M2)', 'iPad Air (5th generation / M1)', 'iPad Air (4th generation)', 'iPad (10th generation)'],
+        '810x1080@2': ['iPad (9th generation)', 'iPad (8th generation)'],
+        '744x1133@2': ['iPad mini (A17 Pro)', 'iPad mini (6th generation)']
+      };
+      return map[key] || [];
+    }
+
     async function runAutoDeviceDetection() {
       const ua = navigator.userAgent || '';
       const w = Math.min(window.screen.width, window.screen.height);
@@ -1840,30 +1927,69 @@
       const dpr = Math.round(window.devicePixelRatio || 1);
       const gpu = extractGpuName();
 
-      let osLabel = 'คอมพิวเตอร์ / เว็บเบราว์เซอร์';
+      let osLabel = 'คอมพิวเตอร์ / เว็บเบราว์เซอร์ (ไม่ได้เปิดจากมือถือ)';
+      let detectedHeadline = 'เปิดจากคอมพิวเตอร์ — กรุณาเลือกยี่ห้อ/รุ่น หรือใช้มือถือที่จะตรวจสแกน QR หน้าร้าน';
       let icon = '💻';
-      const brandSel = document.getElementById('select-brand');
+      let candidates = [];
+      let exactMatch = null;
+      let rawModelHint = '';
+
+      try {
+        if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+          const hints = await navigator.userAgentData.getHighEntropyValues(['model', 'platform', 'platformVersion']);
+          if (hints && hints.model) rawModelHint = hints.model.trim();
+        }
+      } catch (e) {}
+
+      if (!rawModelHint && /Android/i.test(ua)) {
+        const m = ua.match(/Android[^;]+;\s*([^;)]+)\s*(?:Build|\))/i);
+        if (m && m[1] && m[1].trim() !== 'K') rawModelHint = m[1].trim();
+      }
 
       if (/iPhone/i.test(ua)) {
-        osLabel = 'ตรวจพบเครื่อง Apple iPhone (iOS)';
         icon = '🍎';
-        if (brandSel && brandSel.value !== 'Apple') {
-          brandSel.value = 'Apple';
-          handleBrandChange();
+        osLabel = `Apple iPhone (iOS · จอ ${w}×${h} @${dpr}x)`;
+        candidates = getIosCandidatesByScreen(w, h, dpr);
+        if (candidates.length > 0) {
+          detectedHeadline = `ตรวจพบเครื่องที่สแกน QR: Apple iPhone (จอ ${w}×${h} @${dpr}x) — คาดว่าเป็น ${candidates[0]} (แตะยืนยันรุ่นด้านล่าง)`;
+          applyDetectedBrandAndModel('Apple', candidates[0]);
+        } else {
+          detectedHeadline = `ตรวจพบเครื่องที่สแกน QR: Apple iPhone (จอ ${w}×${h} @${dpr}x) — กรุณาเลือกรุ่น iPhone ให้ตรงกับเครื่องจริง`;
+          applyDetectedBrandAndModel('Apple', '');
         }
       } else if (/iPad/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1)) {
-        osLabel = 'ตรวจพบเครื่อง Apple iPad (iPadOS)';
         icon = '📟';
-        if (brandSel && brandSel.value !== 'Apple') {
-          brandSel.value = 'Apple';
-          handleBrandChange();
+        osLabel = `Apple iPad (iPadOS · จอ ${w}×${h} @${dpr}x)`;
+        candidates = getIosCandidatesByScreen(w, h, dpr);
+        if (candidates.length > 0) {
+          detectedHeadline = `ตรวจพบเครื่องที่สแกน QR: Apple iPad (${candidates[0]})`;
+          applyDetectedBrandAndModel('Apple', candidates[0]);
+        } else {
+          detectedHeadline = `ตรวจพบเครื่องที่สแกน QR: Apple iPad (จอ ${w}×${h} @${dpr}x)`;
+          applyDetectedBrandAndModel('Apple', '');
         }
       } else if (/Android/i.test(ua)) {
-        osLabel = 'ตรวจพบอุปกรณ์ระบบ Android';
         icon = '🤖';
-        if (/Samsung|SM-/i.test(ua) && brandSel) {
-          brandSel.value = 'Samsung';
-          handleBrandChange();
+        exactMatch = matchCatalogByHardwareCode(rawModelHint);
+        if (exactMatch) {
+          osLabel = `Android · ${exactMatch.brand} ${exactMatch.name} (${rawModelHint})`;
+          detectedHeadline = `ตรวจพบเครื่องที่สแกน QR อัตโนมัติ: ${exactMatch.brand} ${exactMatch.name} (รหัสเครื่อง ${rawModelHint})`;
+          applyDetectedBrandAndModel(exactMatch.brand, exactMatch.name);
+        } else if (rawModelHint) {
+          const guessedBrand = /SM-|Samsung/i.test(rawModelHint + ua) ? 'Samsung'
+            : /CPH|OPPO/i.test(rawModelHint + ua) ? 'OPPO'
+            : /V2\d{3}|vivo/i.test(rawModelHint + ua) ? 'Vivo'
+            : /Xiaomi|Redmi|POCO|24\d{2}/i.test(rawModelHint + ua) ? 'Xiaomi'
+            : /Pixel/i.test(rawModelHint + ua) ? 'Google'
+            : /HONOR/i.test(rawModelHint + ua) ? 'Honor'
+            : /RMX|realme/i.test(rawModelHint + ua) ? 'Realme'
+            : '';
+          osLabel = `Android (${rawModelHint})`;
+          detectedHeadline = `ตรวจพบเครื่องที่สแกน QR: ${guessedBrand ? guessedBrand + ' ' : ''}รหัส ${rawModelHint}`;
+          if (guessedBrand) applyDetectedBrandAndModel(guessedBrand, '');
+        } else {
+          osLabel = `อุปกรณ์ Android (จอ ${w}×${h} @${dpr}x)`;
+          detectedHeadline = `ตรวจพบเครื่องที่สแกน QR: สมาร์ตโฟน Android (จอ ${w * dpr}×${h * dpr}px) — กรุณาเลือกยี่ห้อและรุ่นด้านล่าง`;
         }
       }
 
@@ -1882,17 +2008,90 @@
 
       const iconEl = document.getElementById('detected-os-icon');
       const titleEl = document.getElementById('detected-device-title');
+      const headlineEl = document.getElementById('detected-model-headline');
+      const chipsEl = document.getElementById('detected-candidate-chips');
       const scrEl = document.getElementById('tele-screen');
       const gpuEl = document.getElementById('tele-gpu');
       const netEl = document.getElementById('tele-net-bat');
 
       if (iconEl) iconEl.textContent = icon;
       if (titleEl) titleEl.textContent = osLabel;
+      if (headlineEl) headlineEl.textContent = detectedHeadline;
       if (scrEl) scrEl.textContent = state.telemetry.screenSpec;
       if (gpuEl) gpuEl.textContent = gpu;
       if (netEl) netEl.textContent = batTxt;
 
+      if (chipsEl) {
+        if (candidates.length > 0) {
+          chipsEl.classList.remove('hidden');
+          chipsEl.classList.add('flex');
+          chipsEl.innerHTML = `<span class="text-[11px] font-bold text-teal-800 mr-1">รุ่นที่ตรงกับขนาดจอเครื่องนี้:</span>` +
+            candidates.map(cName =>
+              `<button type="button" onclick="applyDetectedBrandAndModel('Apple', '${cName.replace(/'/g, "\'")}')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-900 hover:text-white text-slate-800 border border-teal-300 font-bold text-[11px] transition">${cName}</button>`
+            ).join('');
+        } else {
+          chipsEl.classList.add('hidden');
+          chipsEl.classList.remove('flex');
+        }
+      }
+
       updateDeviceSelection();
+    }
+
+    // --- Always Auto-Sync Latest Models, Latest 4-Market Prices & Grading Criteria on Startup ---
+    async function autoSyncLatestCatalogAndPrices(isSilent) {
+      const badge = document.getElementById('catalog-sync-badge');
+      const now = new Date();
+      const dateStamp = `${now.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
+
+      if (badge) badge.textContent = '● กำลังดึงรุ่นใหม่และราคาล่าสุด...';
+
+      const currentBrand = (document.getElementById('select-brand') || {}).value || '';
+      const currentModel = state.modelName || '';
+
+      let fetchedRemote = false;
+      const savedApi = localStorage.getItem('smartcheck_catalog_api_url') || state.sheetsWebhookUrl || '';
+      if (savedApi && savedApi.startsWith('https://')) {
+        try {
+          const url = savedApi.includes('action=') ? savedApi : `${savedApi.split('?')[0]}?action=catalog`;
+          const res = await fetch(url);
+          const data = await res.json();
+          if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+            mergeCatalogData(data);
+            fetchedRemote = true;
+          }
+        } catch (e) {}
+      }
+
+      if (!fetchedRemote && window.google && window.google.script && window.google.script.run) {
+        try {
+          window.google.script.run.withSuccessHandler(data => {
+            if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+              mergeCatalogData(data);
+              if (badge) badge.textContent = `● อัปเดตรุ่น & ราคาล่าสุดจากชีตแล้ว (${dateStamp})`;
+            }
+          }).getLiveCatalog();
+        } catch (e) {}
+      }
+
+      mergeCatalogData(LATEST_CLOUD_MODELS_FEED);
+      if (currentBrand) {
+        const bSel = document.getElementById('select-brand');
+        if (bSel) bSel.value = currentBrand;
+        populateModelOptionsForBrand(currentBrand, '', currentModel);
+        handleModelChange();
+      }
+
+      const totalModels = Object.values(BRAND_MODELS_CATALOG).reduce((acc, arr) => acc + arr.length, 0);
+      if (badge) {
+        badge.textContent = `● อัปเดตรุ่น & ราคาล่าสุด ${totalModels} รุ่น (${dateStamp})`;
+      }
+      if (state.currentView === 'report') {
+        renderReportView();
+      }
+      if (!isSilent) {
+        showToast(`ซิงก์ฐานข้อมูลรุ่นใหม่ (${totalModels} รุ่น) และราคาล่าสุดทั้ง 4 ตลาดเรียบร้อย (${dateStamp})`);
+      }
     }
 
     function updateStatsBar() {
@@ -1923,8 +2122,8 @@
       const bEl = document.getElementById('remobie-card-brand');
       const mEl = document.getElementById('remobie-card-model');
       const sEl = document.getElementById('remobie-card-spec');
-      if (bEl) bEl.textContent = state.brand;
-      if (mEl) mEl.textContent = state.modelName;
+      if (bEl) bEl.textContent = state.brand || 'รอตรวจจับยี่ห้อ';
+      if (mEl) mEl.textContent = state.modelName || 'กรุณาเลือกรุ่นหรือสแกน QR บนเครื่องที่จะตรวจ';
       if (sEl) sEl.textContent = `RAM ${state.ram} · ROM ${state.storage}${state.imei ? ' · IMEI ' + state.imei : ''}`;
 
       const grid = document.getElementById('diagnostic-grid');
@@ -2270,14 +2469,19 @@
                 ใช้เทคนิค <code>&lt;input type="checkbox" switch&gt;</code> จาก GitHub (<code>ios-haptics</code> / <code>browser-haptic</code>) แตะที่สวิตช์มาตรฐานด้านล่าง 3 ครั้งเพื่อรับแรงสั่น Taptic ที่นิ้วโดยตรง (ต้องเปิด <b>สั่นเมื่อแตะ / System Haptics</b> ในตั้งค่า iPhone)
               </p>
               <div class="flex flex-col items-center gap-2.5 py-1">
-                <label for="native-ios-switch-vis" class="flex items-center justify-between gap-4 px-5 py-3 rounded-2xl bg-white border-2 border-emerald-300 shadow-sm cursor-pointer select-none">
-                  <span class="font-extrabold text-slate-800 text-xs">แตะสลับสวิตช์นี้ 3 ครั้ง (<span id="haptic-tap-counter" class="text-emerald-700">0/3</span>):</span>
-                  <input id="native-ios-switch-vis" type="checkbox" switch onchange="handleDirectIosHapticTap()" style=" accent-color:#587868; transform:scale(1.25); " />
+                <label for="native-ios-switch-vis" class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white border-2 border-emerald-300 shadow-sm cursor-pointer select-none">
+                  <span class="font-bold text-slate-800 text-xs text-left">1. แตะที่ตัวสวิตช์ด้านขวา 3 ครั้ง (<span id="haptic-tap-counter" class="text-emerald-700">0/3</span>)<br><span class="text-[10px] font-normal text-slate-500">ปล่อยแรงสั่น Taptic เบาๆ + คลื่นเบส 85Hz</span></span>
+                  <input id="native-ios-switch-vis" type="checkbox" switch onchange="handleDirectIosHapticTap()" />
                 </label>
 
-                <div class="ios-haptic-btn-wrap rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-6 py-3 shadow-sm">
-                  <input id="native-ios-switch-overlay" type="checkbox" switch onchange="handleDirectIosHapticTap()" class="ios-haptic-native-switch" />
-                  <span>📳 แตะปุ่มนี้ซ้ำ 3 ครั้งเพื่อทดสอบสั่น (แตะแล้ว <span id="haptic-tap-counter-2">0/3</span>)</span>
+                <div class="w-full p-3 rounded-2xl bg-white border border-slate-200 text-left space-y-2">
+                  <div class="text-[11px] font-bold text-slate-800">2. ยืนยันมอเตอร์สั่น Taptic Engine แรงเต็มกำลัง (สำหรับ iPhone ทุกรุ่น):</div>
+                  <p class="text-[11px] text-slate-500">
+                    เนื่องจาก Apple ล็อกไม่ให้เว็บเบราว์เซอร์สั่งสั่นแรงเท่าสายเรียกเข้า ให้ <b>โยกปุ่มปิดเสียงข้างตัวเครื่อง (หรือกดปุ่ม Action ค้างไว้)</b> เพื่อรับแรงสั่น Taptic แท้ของ iOS แล้วกดยืนยันด้านล่าง:
+                  </p>
+                  <button type="button" onclick="confirmIosVibrationPass()" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm">
+                    ✓ โยกปุ่มข้างเครื่องแล้ว — มอเตอร์สั่น Taptic ทำงานปกติ
+                  </button>
                 </div>
               </div>
               <div id="vib-pulse-status" class="text-[11px] font-mono font-bold text-emerald-900 bg-white/90 px-3 py-1.5 rounded-xl border border-emerald-200">
@@ -2449,28 +2653,49 @@
               </div>
             </div>
 
-            <!-- 2. Official Parts & Service History Verification (Apple Settings > General > About / Android) -->
+            <!-- 2. Forensic Anti-IC-Swap Check (Auto-Brightness ALS, True Tone, Bezel/Chin — works without 3uTools!) -->
             <div class="p-4 rounded-2xl bg-white border border-slate-200 space-y-3 text-xs">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <div class="font-extrabold text-slate-900">2. ตรวจประวัติการเปลี่ยนอะไหล่ (Parts &amp; Service History)</div>
-                  <p class="text-[11px] text-slate-500">
-                    iPhone: เปิด <b>ตั้งค่า &gt; ทั่วไป &gt; เกี่ยวกับ</b> ดูหัวข้อ <b>ประวัติชิ้นส่วนและบริการ</b> (อ้างอิง <a href="https://support.apple.com/en-us/103256" target="_blank" rel="noopener" class="underline text-teal-700">Apple Support 103256</a>) · Android: เช็กคางจอล่างและสแกนนิ้วใต้จอ
-                  </p>
-                </div>
+              <div>
+                <div class="font-extrabold text-slate-900">2. ตรวจจับ "จอย้ายชิป IC" และเซนเซอร์แสง ALS (ไม่ต้องพึ่ง 3uTools)</div>
+                <p class="text-[11px] text-slate-500 mt-0.5">
+                  หากร้านซ่อมย้ายชิป IC จากจอเดิมมาใส่จอใหม่ หน้าตั้งค่าจะ <b>ไม่ขึ้นแจ้งเตือน Unknown Part</b> ให้ตรวจจับด้วย 3 จุดนี้แทน:
+                  (เมนู Auto-Brightness บน iPhone อยู่ที่ <b>ตั้งค่า &gt; การช่วยการเข้าถึง (Accessibility) &gt; จอภาพและขนาดข้อความ &gt; ปรับความสว่างอัตโนมัติ</b>)
+                </p>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-700 mb-1">สถานะหน้าจอ (Display)</label>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">2.1 Auto-Brightness &amp; เซนเซอร์แสง (ALS)</label>
+                  <select id="sel-part-autobright" onchange="updatePartsAuditFromUi()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2 font-semibold text-slate-900">
+                    <option value="ok" ${pa.autoBrightness === 'ok' ? 'selected' : ''}>✓ ปกติ (เจอเมนูใน Accessibility + ส่องไฟแล้วจอสว่างขึ้นเอง)</option>
+                    <option value="missing_or_no_react" ${pa.autoBrightness === 'missing_or_no_react' ? 'selected' : ''}>✕ ไม่พบเมนู / ส่องไฟแล้วแสงไม่ปรับ (เสี่ยงจอย้าย IC หรือแพร ALS เสีย -฿1,800)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">2.2 ขอบจอ คางจอล่าง &amp; ความเรียบของกระจก</label>
+                  <select id="sel-part-bezel" onchange="updatePartsAuditFromUi()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2 font-semibold text-slate-900">
+                    <option value="ok" ${pa.bezelChin === 'ok' ? 'selected' : ''}>✓ ขอบจอทั้ง 4 ด้านเท่ากันสนิท จอไม่นูน (มาตรฐาน OLED แท้)</option>
+                    <option value="thick_or_raised" ${pa.bezelChin === 'thick_or_raised' ? 'selected' : ''}>✕ คางจอล่างหนาผิดปกติ / จอนูนจากขอบ / มีคราบกาว (สัญญาณจอเทียบ)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">2.3 สถานะหน้าจอ (Display / ประวัติชิ้นส่วน)</label>
                   <select id="sel-part-display" onchange="updatePartsAuditFromUi()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2 font-semibold text-slate-900">
-                    <option value="genuine_orig" ${pa.display === 'genuine_orig' ? 'selected' : ''}>✓ จอแท้เดิมโรงงาน (ไม่ขึ้นประวัติเปลี่ยน)</option>
+                    <option value="genuine_orig" ${pa.display === 'genuine_orig' ? 'selected' : ''}>✓ จอแท้เดิมโรงงาน (ไม่ขึ้นประวัติเปลี่ยน + ALS/True Tone ปกติ)</option>
                     <option value="genuine_replaced" ${pa.display === 'genuine_replaced' ? 'selected' : ''}>● จอแท้เปลี่ยนศูนย์ (Genuine / Used Apple Part)</option>
+                    <option value="ic_swapped" ${pa.display === 'ic_swapped' ? 'selected' : ''}>⚠️ สงสัยจอย้ายชิป IC (ไม่ขึ้นประวัติ แต่เซนเซอร์/ขอบจอผิดปกติ -฿1,800)</option>
                     <option value="fake_display" ${pa.display === 'fake_display' ? 'selected' : ''}>✕ จอเทียบ / จอปลอม (Unknown Part / LCD แสงรั่ว -฿2,800)</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-700 mb-1">สถานะแบตเตอรี่ (Battery)</label>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">2.4 True Tone / เมนบอร์ด / สแกนนิ้วใต้จอ</label>
+                  <select id="sel-part-board" onchange="updatePartsAuditFromUi()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2 font-semibold text-slate-900">
+                    <option value="genuine_orig" ${pa.board === 'genuine_orig' ? 'selected' : ''}>✓ ปกติ (มีปุ่ม True Tone / ไม่ขึ้น Unverified Board)</option>
+                    <option value="no_truetone_or_unverified" ${pa.board === 'no_truetone_or_unverified' ? 'selected' : ''}>✕ ปุ่ม True Tone หาย / แจ้งเตือน Unverified Board (-฿1,500)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">2.5 สถานะแบตเตอรี่ (Battery)</label>
                   <select id="sel-part-battery" onchange="updatePartsAuditFromUi()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2 font-semibold text-slate-900">
                     <option value="genuine_orig" ${pa.battery === 'genuine_orig' ? 'selected' : ''}>✓ แบตแท้เดิมโรงงาน</option>
                     <option value="genuine_replaced" ${pa.battery === 'genuine_replaced' ? 'selected' : ''}>● แบตแท้เปลี่ยนศูนย์ (Genuine Part)</option>
@@ -2478,24 +2703,17 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold text-slate-700 mb-1">สถานะกล้อง (Camera)</label>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">2.6 สถานะกล้อง (Camera)</label>
                   <select id="sel-part-camera" onchange="updatePartsAuditFromUi()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2 font-semibold text-slate-900">
                     <option value="genuine_orig" ${pa.camera === 'genuine_orig' ? 'selected' : ''}>✓ กล้องแท้เดิมโรงงาน</option>
                     <option value="genuine_replaced" ${pa.camera === 'genuine_replaced' ? 'selected' : ''}>● กล้องแท้เปลี่ยนศูนย์ (Genuine / Used)</option>
                     <option value="unknown_part" ${pa.camera === 'unknown_part' ? 'selected' : ''}>✕ กล้องเทียบ / Unknown Part (-฿1,500)</option>
                   </select>
                 </div>
-                <div>
-                  <label class="block text-[11px] font-bold text-slate-700 mb-1">True Tone / เมนบอร์ด / สแกนนิ้วใต้จอ</label>
-                  <select id="sel-part-board" onchange="updatePartsAuditFromUi()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2 font-semibold text-slate-900">
-                    <option value="genuine_orig" ${pa.board === 'genuine_orig' ? 'selected' : ''}>✓ ปกติ (True Tone ทำงาน / ไม่ขึ้น Unverified)</option>
-                    <option value="no_truetone_or_unverified" ${pa.board === 'no_truetone_or_unverified' ? 'selected' : ''}>✕ True Tone หาย / แจ้งเตือน Unverified Board (-฿1,500)</option>
-                  </select>
-                </div>
               </div>
 
               <div class="pt-1 flex flex-wrap items-center justify-between gap-2">
-                <span id="parts-audit-summary-line" class="text-[11px] font-bold text-emerald-700">สรุป: อะไหล่แท้เดิมครบทุกชิ้น</span>
+                <span id="parts-audit-summary-line" class="text-[11px] font-bold text-emerald-700">สรุป: จอแท้เดิมโรงงานครบทุกเกณฑ์</span>
                 <button type="button" onclick="confirmPartsAuthenticityStep()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm">
                   ยืนยันผลตรวจจอแท้ &amp; อะไหล่
                 </button>
@@ -2649,32 +2867,82 @@
       }
     }
 
-    function playRandomTone(isEar) {
-      try {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!state.audioCtx) state.audioCtx = new AC();
-        const ctx = state.audioCtx;
-        if (ctx.state === 'suspended') ctx.resume();
-        const count = 2 + Math.floor(Math.random() * 4);
-        state.expectedBeepCount = count;
-        state.hasPlayedAudioTone = true;
-        for (let i = 0; i < count; i++) {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.frequency.value = (isEar ? 800 : 520) + i * 90;
-          gain.gain.value = isEar ? 0.15 : 0.3;
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          const st = ctx.currentTime + i * 0.28;
-          osc.start(st);
-          osc.stop(st + 0.16);
+    // Synthesizes a real 16-bit PCM WAV Blob URL so HTML5 <audio> plays on iOS Media Playback channel
+    // (Bypasses the iPhone physical Silent Switch & Web Audio API suspended-context mute bug!)
+    function buildPcmWavUrl(pulses, baseFreq, freqStep, toneSec, gapSec, amplitude) {
+      const sampleRate = 22050;
+      const totalSec = pulses * (toneSec + gapSec) + 0.08;
+      const numSamples = Math.floor(sampleRate * totalSec);
+      const buffer = new ArrayBuffer(44 + numSamples * 2);
+      const view = new DataView(buffer);
+      const writeStr = (off, str) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); };
+
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + numSamples * 2, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true); // PCM
+      view.setUint16(22, 1, true); // Mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, 'data');
+      view.setUint32(40, numSamples * 2, true);
+
+      const stepSamples = Math.floor(sampleRate * (toneSec + gapSec));
+      const toneSamples = Math.floor(sampleRate * toneSec);
+      for (let i = 0; i < numSamples; i++) {
+        const pIdx = Math.floor(i / stepSamples);
+        const posInStep = i % stepSamples;
+        let sample = 0;
+        if (pIdx < pulses && posInStep < toneSamples) {
+          const t = posInStep / sampleRate;
+          const freq = baseFreq + pIdx * freqStep;
+          // Smooth attack/release envelope to prevent harsh clicks
+          const env = Math.min(1, posInStep / 300) * Math.min(1, (toneSamples - posInStep) / 300);
+          sample = Math.sin(2 * Math.PI * freq * t) * amplitude * env;
         }
-        const msg = document.getElementById('audio-msg');
-        if (msg) msg.textContent = 'ปล่อยเสียงเรียบร้อย! กดจำนวนครั้งที่คุณได้ยินจริงด้านล่าง:';
-      } catch (e) {
-        state.expectedBeepCount = 3;
-        state.hasPlayedAudioTone = true;
+        view.setInt16(44 + i * 2, Math.max(-1, Math.min(1, sample)) * 32767, true);
       }
+      const blob = new Blob([buffer], { type: 'audio/wav' });
+      return URL.createObjectURL(blob);
+    }
+
+    function playIosSafeWav(pulses, baseFreq, freqStep, toneSec, gapSec, amplitude) {
+      try {
+        if (navigator.audioSession) {
+          navigator.audioSession.type = 'playback';
+        }
+      } catch (e) {}
+      try {
+        if (state.activeAudioEl) {
+          state.activeAudioEl.pause();
+          state.activeAudioEl = null;
+        }
+        const wavUrl = buildPcmWavUrl(pulses, baseFreq, freqStep, toneSec, gapSec, amplitude);
+        const audio = new Audio(wavUrl);
+        audio.setAttribute('playsinline', '');
+        audio.volume = 1.0;
+        state.activeAudioEl = audio;
+        const p = audio.play();
+        if (p && p.catch) p.catch(() => {});
+        setTimeout(() => { try { URL.revokeObjectURL(wavUrl); } catch (e) {} }, 8000);
+      } catch (e) {}
+    }
+
+    function playRandomTone(isEar) {
+      const count = 2 + Math.floor(Math.random() * 4);
+      state.expectedBeepCount = count;
+      state.hasPlayedAudioTone = true;
+
+      // Primary: HTML5 <audio> PCM WAV (Plays loudly on iPhone even when Silent Switch is ON!)
+      playIosSafeWav(count, isEar ? 950 : 660, 110, 0.22, 0.22, isEar ? 0.55 : 0.95);
+
+      const msg = document.getElementById('audio-msg');
+      if (msg) msg.textContent = 'กำลังปล่อยเสียงทดสอบผ่านลำโพง (เร่งปุ่มเพิ่มเสียงข้างเครื่องหากยังเบา)... ฟังแล้วกดจำนวนครั้งด้านล่าง:';
+      showToast('ปล่อยเสียงทดสอบแล้ว (รองรับ iPhone แม้เปิดโหมดปิดเสียง)');
     }
 
     function verifyBeepAnswer(n) {
@@ -2797,24 +3065,8 @@
     }
 
     function playLowFreqTapticPulse(pulses) {
-      try {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!state.audioCtx) state.audioCtx = new AC();
-        const ctx = state.audioCtx;
-        if (ctx.state === 'suspended') ctx.resume();
-        for (let i = 0; i < pulses; i++) {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.value = 58; // Low-frequency Taptic resonance
-          gain.gain.value = 0.45;
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          const startAt = ctx.currentTime + i * 0.42;
-          osc.start(startAt);
-          osc.stop(startAt + 0.22);
-        }
-      } catch (e) {}
+      // Play a strong 85Hz bass-resonance WAV through HTML5 <audio> (bypasses iPhone Silent Switch)
+      playIosSafeWav(pulses, 85, 0, 0.24, 0.20, 0.98);
     }
 
     function playRandomVibration() {
@@ -2862,11 +3114,9 @@
         setTimeout(() => { if (ic) ic.style.transform = 'scale(1)'; }, 150);
       }
       const c1 = document.getElementById('haptic-tap-counter');
-      const c2 = document.getElementById('haptic-tap-counter-2');
       const stBox = document.getElementById('vib-pulse-status');
       const count = Math.min(3, state.iosHapticTapCount);
       if (c1) c1.textContent = `${count}/3`;
-      if (c2) c2.textContent = `${count}/3`;
       if (stBox) {
         stBox.textContent = count >= 3
           ? '✓ ทดสอบแตะสวิตช์ Haptic ครบ 3/3 ครั้งสำเร็จ!'
@@ -3538,18 +3788,29 @@
       const b = document.getElementById('sel-part-battery');
       const c = document.getElementById('sel-part-camera');
       const bd = document.getElementById('sel-part-board');
+      const ab = document.getElementById('sel-part-autobright');
+      const bz = document.getElementById('sel-part-bezel');
+
       if (d) state.partsAudit.display = d.value;
       if (b) state.partsAudit.battery = b.value;
       if (c) state.partsAudit.camera = c.value;
       if (bd) state.partsAudit.board = bd.value;
+      if (ab) state.partsAudit.autoBrightness = ab.value;
+      if (bz) state.partsAudit.bezelChin = bz.value;
+
+      // Auto-flag suspected IC-swap if Auto-Brightness/ALS fails OR thick chin bezel is detected while Display says "genuine_orig"
+      const suspectedIcSwap =
+        state.partsAudit.display === 'ic_swapped' ||
+        state.partsAudit.autoBrightness === 'missing_or_no_react' ||
+        state.partsAudit.bezelChin === 'thick_or_raised';
 
       const hasFakeOrUnknown =
         state.partsAudit.display === 'fake_display' ||
+        suspectedIcSwap ||
         state.partsAudit.battery === 'unknown_part' ||
         state.partsAudit.camera === 'unknown_part' ||
         state.partsAudit.board === 'no_truetone_or_unverified';
 
-      // Sync automatically with View 3 cosmetic radio (cos_parts)
       state.cosmetics.parts = hasFakeOrUnknown ? 'non_genuine' : 'genuine';
       const radioParts = document.querySelector(`input[name="cos_parts"][value="${state.cosmetics.parts}"]`);
       if (radioParts) radioParts.checked = true;
@@ -3559,6 +3820,9 @@
         if (state.partsAudit.display === 'fake_display') {
           sumEl.className = 'text-[11px] font-bold text-rose-700';
           sumEl.textContent = '✕ พบจอเทียบ/จอปลอม (หัก -฿2,800 · จำกัดสูงสุด Grade C)';
+        } else if (suspectedIcSwap) {
+          sumEl.className = 'text-[11px] font-bold text-amber-800';
+          sumEl.textContent = '⚠️ ตรวจพบสัญญาณจอย้าย IC / เซนเซอร์แสง ALS ผิดปกติ (หัก -฿1,800 · จำกัดสูงสุด Grade C)';
         } else if (hasFakeOrUnknown) {
           sumEl.className = 'text-[11px] font-bold text-amber-700';
           sumEl.textContent = 'พบการเปลี่ยนอะไหล่เทียบ / Unknown Part (คำนวณหักลดในใบรายงานอัตโนมัติ)';
@@ -3567,20 +3831,23 @@
           sumEl.textContent = '● เคยเปลี่ยนอะไหล่แท้ศูนย์ (Genuine Part — ผ่านเกณฑ์)';
         } else {
           sumEl.className = 'text-[11px] font-bold text-emerald-700';
-          sumEl.textContent = '✓ จอแท้และอะไหล่เดิมโรงงานครบทุกชิ้น';
+          sumEl.textContent = '✓ จอแท้เดิมโรงงาน + เซนเซอร์ ALS/True Tone ปกติครบทุกจุด';
         }
       }
-      unlockCurrentStepPass(hasFakeOrUnknown ? 'บันทึกประวัติอะไหล่แล้ว' : 'จอแท้ & อะไหล่ปกติ');
+      unlockCurrentStepPass(hasFakeOrUnknown ? 'บันทึกจุดสังเกตอะไหล่แล้ว' : 'จอแท้ & ALS ปกติ');
     }
 
     function confirmPartsAuthenticityStep() {
       updatePartsAuditFromUi();
-      const hasFake =
+      const hasAnomaly =
         state.partsAudit.display === 'fake_display' ||
+        state.partsAudit.display === 'ic_swapped' ||
+        state.partsAudit.autoBrightness === 'missing_or_no_react' ||
+        state.partsAudit.bezelChin === 'thick_or_raised' ||
         state.partsAudit.battery === 'unknown_part' ||
         state.partsAudit.camera === 'unknown_part' ||
         state.partsAudit.board === 'no_truetone_or_unverified';
-      if (hasFake) {
+      if (hasAnomaly) {
         markCurrentTest('fail');
       } else {
         unlockCurrentStepPass('จอแท้ & อะไหล่ปกติ');
@@ -3756,6 +4023,13 @@
       if (pa.display === 'fake_display') {
         issues.push({ category: 'จอแท้/จอปลอม', title: 'ตรวจพบจอเทียบ / จอปลอม (Unknown Display / LCD เทียบ)', detail: 'หักลดมูลค่าจอไม่แท้ (-฿2,800 · สูงสุด Grade C)' });
         specificPartLogged = true;
+      } else if (pa.display === 'ic_swapped' || pa.autoBrightness === 'missing_or_no_react' || pa.bezelChin === 'thick_or_raised') {
+        const clues = [];
+        if (pa.autoBrightness === 'missing_or_no_react') clues.push('Auto-Brightness/เซนเซอร์แสง ALS ไม่ตอบสนอง');
+        if (pa.bezelChin === 'thick_or_raised') clues.push('คางจอล่างหนา/จอนูนผิดปกติ');
+        if (pa.display === 'ic_swapped') clues.push('สงสัยจอย้ายชิป IC');
+        issues.push({ category: 'ตรวจย้ายชิป IC', title: 'ต้องสงสัยจอย้าย IC หรือเซนเซอร์แสง ALS ผิดปกติ', detail: clues.join(' · ') + ' (-฿1,800 · สูงสุด Grade C)' });
+        specificPartLogged = true;
       } else if (pa.display === 'genuine_replaced') {
         issues.push({ category: 'ประวัติซ่อม', title: 'เคยเปลี่ยนหน้าจอแท้ศูนย์ (Genuine / Used Apple Display)', detail: 'บันทึกประวัติซ่อมศูนย์ (ไม่หักค่าจอเทียบ)' });
       }
@@ -3828,6 +4102,10 @@
       if (pa.display === 'fake_display') {
         deductions.push({ label: 'จอเทียบ / จอปลอม (Unknown Display)', amount: 2800 });
         totalDeduct += 2800;
+        partsDeductAdded = true;
+      } else if (pa.display === 'ic_swapped' || pa.autoBrightness === 'missing_or_no_react' || pa.bezelChin === 'thick_or_raised') {
+        deductions.push({ label: 'สงสัยจอย้าย IC / เซนเซอร์ ALS ผิดปกติ', amount: 1800 });
+        totalDeduct += 1800;
         partsDeductAdded = true;
       }
       if (pa.battery === 'unknown_part') {
@@ -5246,12 +5524,13 @@ function fetchAppleSupportModelsFromUrl(targetUrl) {
       showToast('คัดลอกโค้ด Code.gs ฉบับสมบูรณ์เรียบร้อย นำไปวางใน Google Apps Script ได้เลย!');
     }
 
-    window.onload = function() {
+    window.onload = async function() {
       loadSavedCatalogFromStorage();
       loadSheetsConfigAndHistory();
       handleBrandChange();
       renderHomeLauncherQr();
-      runAutoDeviceDetection();
+      await autoSyncLatestCatalogAndPrices(true);
+      await runAutoDeviceDetection();
       renderDashboardGrid();
       refreshSamplePhotos();
       updateStatsBar();

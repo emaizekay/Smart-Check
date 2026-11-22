@@ -376,15 +376,42 @@
                   </div>
                 </div>
 
-                <!-- Row 3: IMEI / SN & Color/Note -->
+                <!-- Row 3: IMEI / SN (with Live Luhn & TAC Check) & Official Color Auto-Chips -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label for="input-imei" class="block text-slate-700 font-bold mb-1">5. เลข IMEI หรือ Serial Number (SN)</label>
-                    <input id="input-imei" type="text" oninput="updateDeviceSelection()" placeholder="กด *#06# บนมือถือเพื่อดูเลข IMEI 15 หลัก" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <div class="flex items-center justify-between gap-1 mb-1">
+                      <label for="input-imei" class="block text-slate-700 font-bold">5. เลข IMEI หรือ Serial Number (SN)</label>
+                      <a href="https://checkcoverage.apple.com/" target="_blank" rel="noopener" class="text-[10px] font-semibold text-teal-700 underline">เช็กประกัน/สี Apple</a>
+                    </div>
+                    <input id="input-imei" type="text" oninput="handleImeiOrSnInput(this.value)" placeholder="กด *#06# เพื่อกรอก IMEI 15 หลัก หรือ SN (ตรวจความถูกต้องอัตโนมัติ)" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <div id="imei-validation-hint" class="mt-1 text-[10px] text-slate-500">เบราว์เซอร์ไม่สามารถดึง IMEI อัตโนมัติได้ (กรอกเลข 15 หลักเพื่อตรวจ Luhn หรือเสียบสาย USB ผ่านตัวช่วยด้านล่าง)</div>
                   </div>
                   <div>
-                    <label for="input-device-color" class="block text-slate-700 font-bold mb-1">6. สีตัวเครื่อง / หมายเหตุเพิ่มเติม</label>
-                    <input id="input-device-color" type="text" oninput="updateDeviceSelection()" placeholder="เช่น สีดำ Titanium, เครื่องศูนย์ไทย..." class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <label for="input-device-color" class="block text-slate-700 font-bold mb-1">6. สีตัวเครื่อง (Color) — แตะเลือกสีแท้ตามรุ่น</label>
+                    <input id="input-device-color" type="text" oninput="updateDeviceSelection()" placeholder="เลือกสีจากปุ่มด้านล่าง หรือพิมพ์ระบุเอง..." class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <div id="official-color-chips" class="mt-1.5 flex flex-wrap gap-1"></div>
+                  </div>
+                </div>
+
+                <!-- Row 4: Live Battery Health Inspector & 3uTools-Style USB Hardware Bridge Strip -->
+                <div class="p-3 rounded-xl bg-white border border-slate-200 space-y-2">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      <span class="font-bold text-slate-800 text-[11px]">สุขภาพแบตเตอรี่ &amp; อ่านค่าฮาร์ดแวร์เชิงลึก (สไตล์ 3uTools)</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <button type="button" onclick="runLiveBatteryProbe()" class="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 font-bold text-[10px] transition">
+                        วัดสถานะแบตหน้าเว็บ
+                      </button>
+                      <button type="button" onclick="openUsbBridgeModal()" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] transition">
+                        ดึงค่าเต็มแบบ 3uTools (USB / Import)
+                      </button>
+                    </div>
+                  </div>
+                  <div id="home-battery-live-readout" class="text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
+                    <span>ระดับแบตปัจจุบัน: <b id="home-bat-pct">กำลังอ่าน...</b> · สุขภาพแบตที่บันทึก: <b id="home-bat-health-val" class="text-emerald-700">90%</b></span>
+                    <span class="text-[10px] text-slate-400">iPad/Android ที่ไม่โชว์ % สุขภาพแบต ให้ใช้โหมด USB Bridge (ในไฟล์ .zip)</span>
                   </div>
                 </div>
 
@@ -1256,6 +1283,39 @@
   <!-- Full-Screen Hardware Test Overlay (Used for Edge-to-Edge Touch Grid 1-48 & Full-Screen RGB Display Check) -->
   <div id="fullscreen-test-overlay" class="fixed inset-0 z-[70] bg-slate-950 hidden flex-col select-none touch-none no-print"></div>
 
+  <!-- 3uTools-Style USB Hardware Bridge & Deep Spec Import Modal -->
+  <div id="usb-bridge-modal" onclick="closeUsbBridgeModal()" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-xl w-full overflow-hidden" onclick="event.stopPropagation()">
+      <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-teal-300">3uTools-Style Hardware Reader (iOS / iPadOS / Android)</span>
+          <h3 class="text-sm sm:text-base font-bold">อ่านค่า IMEI, SN, สีแท้, ความจุ, สุขภาพแบต % และรอบชาร์จผ่านสาย USB</h3>
+        </div>
+        <button type="button" onclick="closeUsbBridgeModal()" class="text-slate-300 hover:text-white text-xs font-bold">✕ ปิด</button>
+      </div>
+      <div class="p-5 space-y-3.5 text-xs text-slate-700 max-h-[82vh] overflow-y-auto">
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+          <div class="font-bold text-slate-900">ทำไมต้องใช้สาย USB ผ่านตัวช่วย (SmartCheck USB Bridge)?</div>
+          <p class="text-[11px] text-slate-600">
+            เบราว์เซอร์มือถือ (Safari/Chrome) ถูกระบบปฏิบัติการล็อกไม่ให้อ่าน <b>IMEI, Serial Number, สุขภาพแบต iPad/Android และรอบชาร์จ (Cycle Count)</b> โดยตรง แต่เมื่อเสียบสาย USB เข้าคอมพิวเตอร์ร้านและรันสคริปต์ <code>smartcheck_usb_bridge.py</code> (แถมให้ในโฟลเดอร์ <code>usb_bridge_3utools/</code> ของไฟล์ .zip) ระบบจะอ่านค่าจริงครบทุกอย่างเหมือน 3uTools โดยไม่ติดหน้าต่างบังคับอัปเดต
+          </p>
+        </div>
+        <div class="space-y-1.5">
+          <label for="usb-bridge-json-input" class="block font-bold text-slate-800">วางข้อมูล JSON ที่ได้จาก SmartCheck USB Bridge (หรือไฟล์ log iOS Analytics):</label>
+          <textarea id="usb-bridge-json-input" rows="4" placeholder='{"brand":"Apple","model":"iPhone 16 Pro","ram":"8GB","storage":"256GB","color":"Natural Titanium","imei":"353912104829104","serial":"F2LZK123Q6L9","batteryHealth":96,"cycleCount":48,"partsGenuine":true}' class="w-full rounded-xl border border-slate-300 bg-slate-50 p-3 font-mono text-[11px] text-slate-800 focus:bg-white focus:outline-none"></textarea>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="applyUsbBridgeJson()" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm">
+            นำเข้าข้อมูลเครื่อง &amp; สุขภาพแบตเข้าฟอร์มทันที
+          </button>
+          <button type="button" onclick="fillUsbBridgeSampleJson()" class="py-2.5 px-3 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 font-bold text-xs">
+            ใส่ตัวอย่างทดสอบ
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 hidden no-print">
     <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2.5 text-xs font-medium">
@@ -1702,11 +1762,12 @@
           const found = (BRAND_MODELS_CATALOG[bVal] || []).find(x => x.name === modelName);
           if (specHint) {
             if (found && (found.capacities || found.colors || found.modelNums)) {
-              specHint.innerHTML = `<span class="text-blue-700 font-bold">ข้อมูลทางการ Apple:</span> ความจุ ${found.capacities || found.rom} · สี ${found.colors || '-'} · โมเดล <span class="font-mono">${found.modelNums || '-'}</span>`;
+              specHint.innerHTML = `<span class="text-teal-700 font-bold">สเปกทางการ:</span> ความจุ ${found.capacities || found.rom} · โมเดล <span class="font-mono">${found.modelNums || '-'}</span>`;
             } else {
               specHint.textContent = `สเปกมาตรฐาน: RAM ${parts[1]} · ความจุเริ่มต้น ${parts[2]}`;
             }
           }
+          renderOfficialColorChips(found && found.colors ? found.colors : '');
         }
       }
       handleRamRomChange();
@@ -1993,11 +2054,41 @@
         }
       }
 
+      // Auto-read Hardware RAM (Android Chrome/Edge) & Estimated Storage Tier (navigator.storage.estimate)
+      try {
+        if (navigator.deviceMemory && !/iPhone|iPad/i.test(ua)) {
+          const ramStr = navigator.deviceMemory >= 8 ? '8GB' : navigator.deviceMemory >= 6 ? '6GB' : navigator.deviceMemory >= 4 ? '4GB' : '3GB';
+          const ramSel = document.getElementById('select-ram');
+          if (ramSel && (!state.modelName || ramSel.value === 'ไม่ระบุ')) {
+            ramSel.value = ramStr;
+          }
+        }
+        if (navigator.storage && navigator.storage.estimate) {
+          const est = await navigator.storage.estimate();
+          if (est && est.quota) {
+            const quotaGb = est.quota / (1024 * 1024 * 1024);
+            // Browser quota is typically ~60-80% of total disk on Chrome/Android
+            const estTotalGb = quotaGb * 1.4;
+            const romGuess = estTotalGb > 600 ? '1TB' : estTotalGb > 300 ? '512GB' : estTotalGb > 140 ? '256GB' : estTotalGb > 70 ? '128GB' : '64GB';
+            const romSel = document.getElementById('input-storage');
+            if (romSel && !state.modelName) {
+              romSel.value = romGuess;
+            }
+          }
+        }
+      } catch (e) {}
+
       let batTxt = navigator.onLine ? 'Wi-Fi Online' : 'Offline';
       try {
         if (navigator.getBattery) {
           const b = await navigator.getBattery();
-          batTxt = `แบต ${Math.round(b.level * 100)}%`;
+          const pct = Math.round(b.level * 100);
+          batTxt = `แบต ${pct}%${b.charging ? ' (กำลังชาร์จ)' : ''}`;
+          const hBat = document.getElementById('home-bat-pct');
+          if (hBat) hBat.textContent = `${pct}%${b.charging ? ' · กำลังชาร์จ' : ''}`;
+        } else {
+          const hBat = document.getElementById('home-bat-pct');
+          if (hBat) hBat.textContent = /iPhone|iPad/i.test(ua) ? 'iOS ปิดกั้นการอ่านผ่านเว็บ (ดูใน ตั้งค่า > แบตเตอรี่ หรือเสียบ USB Bridge)' : 'ไม่รองรับ Web Battery API';
         }
       } catch (e) {}
 
@@ -3874,6 +3965,8 @@
         const bh = state.cosmetics.batteryHealth;
         const statusTxt = bh >= 90 ? 'Premium A+' : bh >= 85 ? 'Grade A' : bh >= 80 ? 'Grade B' : 'เสื่อม (<80%)';
         if (lbl) lbl.textContent = `${bh}% (${statusTxt})`;
+        const hVal = document.getElementById("home-bat-health-val");
+        if (hVal) hVal.textContent = `${bh}% (${statusTxt})`;
       }
       refreshSamplePhotos();
     }
@@ -5511,6 +5604,164 @@ function fetchAppleSupportModelsFromUrl(targetUrl) {
       if (m) {
         m.classList.add('hidden');
         m.classList.remove('flex');
+      }
+    }
+
+    function renderOfficialColorChips(colorsCsv) {
+      const box = document.getElementById('official-color-chips');
+      if (!box) return;
+      if (!colorsCsv) {
+        box.innerHTML = '';
+        return;
+      }
+      const list = colorsCsv.split(',').map(s => s.trim()).filter(Boolean);
+      box.innerHTML = list.map(col =>
+        `<button type="button" onclick="selectOfficialColor('${col.replace(/'/g, "\'")}')" class="px-2 py-0.5 rounded-lg bg-white hover:bg-slate-900 hover:text-white text-slate-700 border border-slate-200 text-[10px] font-semibold transition">${col}</button>`
+      ).join('');
+    }
+
+    function selectOfficialColor(colName) {
+      const inp = document.getElementById('input-device-color');
+      if (inp) inp.value = colName;
+      updateDeviceSelection();
+    }
+
+    function isValidImeiLuhn(digits) {
+      if (!/^\d{15}$/.test(digits)) return false;
+      let sum = 0;
+      for (let i = 0; i < 15; i++) {
+        let d = parseInt(digits[i], 10);
+        if (i % 2 === 1) {
+          d *= 2;
+          if (d > 9) d -= 9;
+        }
+        sum += d;
+      }
+      return sum % 10 === 0;
+    }
+
+    function handleImeiOrSnInput(val) {
+      updateDeviceSelection();
+      const hint = document.getElementById('imei-validation-hint');
+      if (!hint) return;
+      const clean = (val || '').replace(/[^A-Za-z0-9]/g, '');
+      if (!clean) {
+        hint.className = 'mt-1 text-[10px] text-slate-500';
+        hint.textContent = 'เบราว์เซอร์ไม่สามารถดึง IMEI อัตโนมัติได้ (กรอกเลข 15 หลักเพื่อตรวจ Luhn หรือเสียบสาย USB ผ่านตัวช่วยด้านล่าง)';
+        return;
+      }
+      if (/^\d{15}$/.test(clean)) {
+        const ok = isValidImeiLuhn(clean);
+        const tac = clean.slice(0, 8);
+        const tacVendor = /^35/.test(clean) ? 'Apple / Samsung / กลุ่มมาตรฐาน BABT (TAC ' + tac + ')' : 'รหัส TAC ' + tac;
+        if (ok) {
+          hint.className = 'mt-1 text-[10px] font-bold text-emerald-700';
+          hint.textContent = `✓ เลข IMEI 15 หลักถูกต้องตามสูตร Luhn (${tacVendor})`;
+        } else {
+          hint.className = 'mt-1 text-[10px] font-bold text-rose-700';
+          hint.textContent = '✕ เลข IMEI 15 หลักไม่ผ่านสูตรตรวจสอบ Luhn (กรุณาเช็กตัวเลขอีกครั้ง)';
+        }
+      } else if (/^[A-Za-z0-9]{10,12}$/.test(clean)) {
+        hint.className = 'mt-1 text-[10px] font-bold text-teal-700';
+        hint.textContent = `● ตรวจพบรูปแบบ Serial Number (${clean.length} หลัก) — กดลิงก์ "เช็กประกัน/สี Apple" ด้านบนเพื่อยืนยันสีและความจุ`;
+      } else {
+        hint.className = 'mt-1 text-[10px] text-slate-500';
+        hint.textContent = `กำลังกรอก (${clean.length}/15 หลักสำหรับ IMEI หรือ 10–12 หลักสำหรับ Serial Number)`;
+      }
+    }
+
+    async function runLiveBatteryProbe() {
+      const hBat = document.getElementById('home-bat-pct');
+      const hVal = document.getElementById('home-bat-health-val');
+      if (navigator.getBattery) {
+        try {
+          const b = await navigator.getBattery();
+          const pct = Math.round(b.level * 100);
+          if (hBat) hBat.textContent = `${pct}% (${b.charging ? 'กำลังชาร์จไฟเข้า' : 'ไม่ได้เสียบสาย'})`;
+          showToast(`อ่านสถานะแบตเตอรี่สดได้ ${pct}% (สำหรับ % สุขภาพแบตเชิงลึกและรอบชาร์จ ให้ใช้โหมด USB Bridge)`);
+          return;
+        } catch (e) {}
+      }
+      if (hBat) hBat.textContent = 'iOS Safari บล็อกการอ่านค่าแบตโดยตรง — ใช้โหมด USB Bridge เพื่อดึง % สุขภาพแบตและรอบชาร์จจริง';
+      if (hVal) hVal.textContent = `${state.cosmetics.batteryHealth}%`;
+      showToast('บน iPhone/iPad Safari ไม่อนุญาตให้อ่าน % สุขภาพแบตจากเว็บโดยตรง — กดปุ่ม "ดึงค่าเต็มแบบ 3uTools (USB)" เพื่อดูวิธีดึงผ่านสาย USB', '⚡');
+    }
+
+    function openUsbBridgeModal() {
+      const m = document.getElementById('usb-bridge-modal');
+      if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
+    }
+
+    function closeUsbBridgeModal() {
+      const m = document.getElementById('usb-bridge-modal');
+      if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+    }
+
+    function fillUsbBridgeSampleJson() {
+      const ta = document.getElementById('usb-bridge-json-input');
+      if (ta) {
+        ta.value = JSON.stringify({
+          brand: 'Apple',
+          model: 'iPhone 16 Pro',
+          ram: '8GB',
+          storage: '256GB',
+          color: 'Natural Titanium',
+          imei: '353912104829104',
+          serial: 'F2LZK123Q6L9',
+          batteryHealth: 94,
+          cycleCount: 62,
+          partsGenuine: true
+        }, null, 2);
+      }
+    }
+
+    function applyUsbBridgeJson() {
+      const ta = document.getElementById('usb-bridge-json-input');
+      if (!ta || !ta.value.trim()) {
+        showToast('กรุณาวางข้อมูล JSON จาก SmartCheck USB Bridge ก่อนครับ', '⚠️');
+        return;
+      }
+      try {
+        const d = JSON.parse(ta.value.trim());
+        if (d.brand && d.model) {
+          applyDetectedBrandAndModel(d.brand, d.model);
+        }
+        if (d.ram) {
+          const ramSel = document.getElementById('select-ram');
+          if (ramSel) ramSel.value = d.ram;
+        }
+        if (d.storage) {
+          const romSel = document.getElementById('input-storage');
+          if (romSel) romSel.value = d.storage;
+        }
+        if (d.imei || d.serial) {
+          const imeiInp = document.getElementById('input-imei');
+          if (imeiInp) {
+            imeiInp.value = d.imei || d.serial;
+            handleImeiOrSnInput(imeiInp.value);
+          }
+        }
+        if (d.color) {
+          const colInp = document.getElementById('input-device-color');
+          if (colInp) colInp.value = d.color + (d.cycleCount ? ` (ชาร์จ ${d.cycleCount} รอบ)` : '');
+        }
+        if (d.batteryHealth) {
+          const batRange = document.getElementById('input-battery-health');
+          if (batRange) batRange.value = Math.min(100, Math.max(50, parseInt(d.batteryHealth, 10)));
+          const hVal = document.getElementById('home-bat-health-val');
+          if (hVal) hVal.textContent = `${d.batteryHealth}%${d.cycleCount ? ` (${d.cycleCount} รอบ)` : ''}`;
+          updateCosmetics();
+        }
+        if (d.partsGenuine === false) {
+          state.cosmetics.parts = 'non_genuine';
+          state.partsAudit.display = 'fake_display';
+        }
+        updateDeviceSelection();
+        renderDashboardGrid();
+        closeUsbBridgeModal();
+        showToast(`นำเข้าข้อมูลฮาร์ดแวร์จริงของ ${d.brand || ''} ${d.model || ''} (แบต ${d.batteryHealth || '-'}%) เรียบร้อย!`);
+      } catch (e) {
+        showToast('รูปแบบ JSON ไม่ถูกต้อง กรุณาตรวจสอบข้อความที่วางครับ', '✕');
       }
     }
 

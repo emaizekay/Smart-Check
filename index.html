@@ -2980,28 +2980,29 @@
         const s1 = pa.bezelChin || '';
         const s2 = pa.oledVerdict || '';
         const s3 = pa.sysVerdict || '';
+        const sBat = pa.battery || '';
         const btnCls = (active, tone) => {
           if (!active) return 'py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 text-[#1E2433] border border-slate-300 font-semibold text-xs text-left transition';
           if (tone === 'ok') return 'py-2.5 px-3 rounded-xl bg-[#D4E9D8] text-[#143A26] border-2 border-[#5EA874] font-extrabold text-xs text-left shadow-sm transition';
           if (tone === 'info') return 'py-2.5 px-3 rounded-xl bg-[#C4DCFF] text-[#162944] border-2 border-[#5A92E0] font-extrabold text-xs text-left shadow-sm transition';
+          if (tone === 'mid') return 'py-2.5 px-3 rounded-xl bg-[#FFF0CA] text-[#4A2B0F] border-2 border-[#D4A054] font-extrabold text-xs text-left shadow-sm transition';
           return 'py-2.5 px-3 rounded-xl bg-[#F6CBD5] text-[#5C192D] border-2 border-[#D46A87] font-extrabold text-xs text-left shadow-sm transition';
         };
         stage.innerHTML = `
           <div class="w-full max-w-2xl space-y-3 text-left text-xs">
             <div class="p-3.5 rounded-2xl bg-[#FFF0CA]/65 border border-[#E2B380] flex flex-wrap items-center justify-between gap-2">
               <div>
-                <div class="font-extrabold text-[#4A2B0F]">ตรวจหน้าจอแท้แบบเร็ว 3 ขั้นตอน (30 วินาที · มาตรฐานสากล/ไทย)</div>
-                <p class="text-[11px] text-[#5C3A16] mt-0.5">ระบบไม่กรอกผล "ปกติ" ให้อัตโนมัติ — แตะเลือกผลตรวจจริงให้ครบทั้ง 3 ขั้นตอนด้านล่าง</p>
+                <div class="font-extrabold text-[#4A2B0F]">ตรวจจอแท้-เทียบ &amp; แบตเตอรี่ (4 ระดับ · มาตรฐานร้านรับซื้อไทย)</div>
+                <p class="text-[11px] text-[#5C3A16] mt-0.5">ระบบไม่กรอก "ปกติ" ให้อัตโนมัติ — แตะเลือกผลตรวจจริงให้ครบทั้ง 4 ข้อด้านล่าง</p>
               </div>
               <button type="button" onclick="openOledBlackTest()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-[#162944] border border-[#8EB6EB] font-bold text-[11px] shadow-sm">
                 เปิดจอดำ OLED เต็มจอ
               </button>
             </div>
 
-            <!-- Step 1: 20cm & Edge Feel -->
+            <!-- 1. Bezel & 20cm Check -->
             <div class="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-2">
-              <div class="font-extrabold text-[#162944]">1. มองระยะ 20–30 ซม. &amp; ลูบขอบจอ (10 วิ)</div>
-              <p class="text-[11px] text-slate-500">ลูบเล็บข้ามรอยต่อกระจกกับเฟรมโลหะและดูความกว้างคางจอล่าง</p>
+              <div class="font-extrabold text-[#162944]">1. ขอบจอ &amp; คางจอล่าง (มองระยะ 20–30 ซม. + ลูบขอบ)</div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button type="button" onclick="setQuickScreenCheck(1, 'ok')" class="${btnCls(s1 === 'ok', 'ok')}">
                   ✓ ขอบเรียบสนิท คางจอบางปกติ
@@ -3012,56 +3013,65 @@
               </div>
             </div>
 
-            <!-- Step 2: OLED Black / Backlight Check -->
+            <!-- 2. OLED Pure Black vs Gray LCD Backlight -->
             <div class="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-2">
-              <div class="font-extrabold text-[#162944]">2. เช็กสีขาว &amp; จอดำ OLED ในที่มืด (10 วิ)</div>
-              <p class="text-[11px] text-slate-500">กด "เปิดจอดำ OLED เต็มจอ" ด้านบน — จอแท้ต้องดำสนิทไร้แสงเทาเรืองตามขอบ</p>
+              <div class="font-extrabold text-[#162944]">2. สีขาว &amp; จอดำสนิท OLED ในที่มืด</div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button type="button" onclick="setQuickScreenCheck(2, 'oled_ok')" class="${btnCls(s2 === 'oled_ok', 'ok')}">
                   ✓ สีสม่ำเสมอ &amp; จอดำสนิท (OLED แท้)
                 </button>
                 <button type="button" onclick="setQuickScreenCheck(2, 'fake_display')" class="${btnCls(s2 === 'fake_display', 'warn')}">
-                  ✕ จอเรืองแสงสีเทา / จอเทียบ LCD (-฿2,800)
+                  ✕ จอเรืองแสงสีเทา / จอเทียบ LCD (-฿2,800 · สูงสุด C)
                 </button>
               </div>
             </div>
 
-            <!-- Step 3: Parts History + True Tone / Auto-Brightness -->
+            <!-- 3. Display Parts History (4 Tiers) -->
             <div class="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-2">
-              <div class="font-extrabold text-[#162944]">3. เช็กประวัติชิ้นส่วน + True Tone / Auto-Brightness (10 วิ)</div>
-              <p class="text-[11px] text-slate-500">iPhone: ดู <b>ตั้งค่า &gt; ทั่วไป &gt; เกี่ยวกับ</b> และปุ่ม <b>Auto-Brightness / True Tone</b> · Samsung: เช็กใน <code>*#0*#</code></p>
-              <div class="grid grid-cols-1 gap-2">
+              <div class="font-extrabold text-[#162944]">3. สถานะหน้าจอ (ประวัติชิ้นส่วน + True Tone / Auto-Brightness)</div>
+              <div class="grid grid-cols-1 gap-1.5">
                 <button type="button" onclick="setQuickScreenCheck(3, 'genuine_orig')" class="${btnCls(s3 === 'genuine_orig', 'ok')}">
-                  ✓ จอแท้เดิมโรงงาน (ไม่ขึ้นประวัติเปลี่ยน + มี True Tone &amp; Auto-Brightness ปกติ)
+                  ✓ เดิมโรงงาน (ไม่ขึ้นประวัติ + มี True Tone &amp; Auto-Brightness · สูงสุด A+)
                 </button>
                 <button type="button" onclick="setQuickScreenCheck(3, 'genuine_replaced')" class="${btnCls(s3 === 'genuine_replaced', 'info')}">
-                  ● เคยเปลี่ยนจอแท้ศูนย์ (Genuine / Used Apple Part — ไม่หักค่าจอเทียบ)
+                  ● เปลี่ยนจอแท้ศูนย์ (Genuine / Used Apple Part · ไม่หักค่าจอ · สูงสุด A)
                 </button>
-                <button type="button" onclick="setQuickScreenCheck(3, 'ic_swapped')" class="${btnCls(s3 === 'ic_swapped', 'warn')}">
-                  ✕ Auto-Brightness / True Tone หาย หรือขึ้น Unknown Part (เสี่ยงจอย้าย IC -฿1,800)
+                <button type="button" onclick="setQuickScreenCheck(3, 'ic_swapped')" class="${btnCls(s3 === 'ic_swapped', 'mid')}">
+                  ⚠️ เปลี่ยนมา / ไม่รู้แท้-ปลอม (ขึ้น Unknown, ร้านนอก, หรือ ALS/True Tone หาย · -฿1,800 · สูงสุด C)
                 </button>
               </div>
             </div>
 
-            <!-- Optional Secondary Parts Check (Collapsed by default to keep intake fast) -->
+            <!-- 4. Battery Authenticity (3 Tiers) -->
+            <div class="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-2">
+              <div class="font-extrabold text-[#162944]">4. สถานะแบตเตอรี่ (เดิมโรงงาน / แท้ศูนย์ / เปลี่ยนมาไม่รู้แท้-ปลอม)</div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                <button type="button" onclick="setQuickScreenCheck(4, 'genuine_orig')" class="${btnCls(sBat === 'genuine_orig', 'ok')}">
+                  ✓ แบตเดิมโรงงาน (สูงสุด A+)
+                </button>
+                <button type="button" onclick="setQuickScreenCheck(4, 'genuine_replaced')" class="${btnCls(sBat === 'genuine_replaced', 'info')}">
+                  ● แบตแท้ศูนย์ Genuine (สูงสุด A)
+                </button>
+                <button type="button" onclick="setQuickScreenCheck(4, 'unknown_part')" class="${btnCls(sBat === 'unknown_part', 'mid')}">
+                  ⚠️ เปลี่ยนมา / Unknown (-฿1,200 · สูงสุด B)
+                </button>
+              </div>
+            </div>
+
             <details class="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-[11px]">
-              <summary class="font-bold text-slate-700 cursor-pointer">ตัวเลือกเสริม: พบแบตเทียบ หรือ กล้องเทียบ (ติ๊กเฉพาะเมื่อพบ)</summary>
-              <div class="mt-2.5 flex flex-wrap gap-4">
-                <label class="inline-flex items-center gap-2 font-semibold text-slate-800 cursor-pointer">
-                  <input id="chk-unknown-battery" type="checkbox" onchange="updateQuickScreenSummary()" ${pa.battery === 'unknown_part' ? 'checked' : ''} class="rounded" />
-                  <span>แบตเทียบ / Unknown Battery (-฿1,200)</span>
-                </label>
+              <summary class="font-bold text-slate-700 cursor-pointer">ตัวเลือกเสริม: พบกล้องเทียบ / Unknown Camera (ติ๊กเฉพาะเมื่อพบ)</summary>
+              <div class="mt-2">
                 <label class="inline-flex items-center gap-2 font-semibold text-slate-800 cursor-pointer">
                   <input id="chk-unknown-camera" type="checkbox" onchange="updateQuickScreenSummary()" ${pa.camera === 'unknown_part' ? 'checked' : ''} class="rounded" />
-                  <span>กล้องเทียบ / Unknown Camera (-฿1,500)</span>
+                  <span>กล้องเทียบ / Unknown Camera (-฿1,500 · สูงสุด C)</span>
                 </label>
               </div>
             </details>
 
             <div class="pt-1 flex flex-wrap items-center justify-between gap-2">
-              <span id="parts-audit-summary-line" class="text-[11px] font-bold text-slate-600">กรุณาแตะเลือกผลตรวจให้ครบทั้ง 3 ขั้นตอน</span>
+              <span id="parts-audit-summary-line" class="text-[11px] font-bold text-slate-600">กรุณาแตะเลือกผลตรวจให้ครบทั้ง 4 ข้อ</span>
               <button id="btn-confirm-parts-auth" type="button" onclick="confirmPartsAuthenticityStep()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold text-xs shadow-sm">
-                ยืนยันผลตรวจหน้าจอ
+                ยืนยันผลตรวจจอ &amp; แบต
               </button>
             </div>
           </div>
@@ -4123,19 +4133,19 @@
       if (stepNo === 1) state.partsAudit.bezelChin = val;
       if (stepNo === 2) state.partsAudit.oledVerdict = val;
       if (stepNo === 3) state.partsAudit.sysVerdict = val;
+      if (stepNo === 4) state.partsAudit.battery = val;
       syncQuickScreenToAuditState();
       renderRunnerStage();
     }
 
     function syncQuickScreenToAuditState() {
       const pa = state.partsAudit;
-      const chkBat = document.getElementById('chk-unknown-battery');
       const chkCam = document.getElementById('chk-unknown-camera');
-      if (chkBat) pa.battery = chkBat.checked ? 'unknown_part' : 'genuine_orig';
       if (chkCam) pa.camera = chkCam.checked ? 'unknown_part' : 'genuine_orig';
 
       pa.autoBrightness = pa.sysVerdict === 'ic_swapped' ? 'missing_or_no_react' : (pa.sysVerdict ? 'ok' : '');
-      pa.board = pa.sysVerdict === 'ic_swapped' ? 'no_truetone_or_unverified' : (pa.sysVerdict ? 'genuine_orig' : '');
+      // Keep board genuine_orig to avoid double-deducting alongside display ic_swapped (-1800)
+      pa.board = 'genuine_orig';
 
       if (pa.oledVerdict === 'fake_display') {
         pa.display = 'fake_display';
@@ -4153,15 +4163,13 @@
     function updateQuickScreenSummary() {
       syncQuickScreenToAuditState();
       const pa = state.partsAudit;
-      const missing = [!pa.bezelChin, !pa.oledVerdict, !pa.sysVerdict].filter(Boolean).length;
-      const hasAnomaly =
-        pa.display === 'fake_display' ||
-        pa.display === 'ic_swapped' ||
-        pa.battery === 'unknown_part' ||
-        pa.camera === 'unknown_part';
+      const missing = [!pa.bezelChin, !pa.oledVerdict, !pa.sysVerdict, !pa.battery].filter(Boolean).length;
+      const isDisplayNonGenuine = (pa.display === 'fake_display' || pa.display === 'ic_swapped');
+      const isAnyUnknown = isDisplayNonGenuine || pa.battery === 'unknown_part' || pa.camera === 'unknown_part';
+      const isGenuineReplaced = (pa.display === 'genuine_replaced' || pa.battery === 'genuine_replaced');
 
       if (missing === 0) {
-        state.cosmetics.parts = hasAnomaly ? 'non_genuine' : 'genuine';
+        state.cosmetics.parts = isAnyUnknown ? 'non_genuine' : 'genuine';
         const radioParts = document.querySelector(`input[name="cos_parts"][value="${state.cosmetics.parts}"]`);
         if (radioParts) radioParts.checked = true;
       }
@@ -4170,27 +4178,30 @@
       if (sumEl) {
         if (missing > 0) {
           sumEl.className = 'text-[11px] font-bold text-slate-600';
-          sumEl.textContent = `เหลืออีก ${missing}/3 ขั้นตอน — แตะเลือกให้ครบก่อนยืนยัน`;
+          sumEl.textContent = `เหลืออีก ${missing}/4 ข้อ — แตะเลือกให้ครบก่อนยืนยัน`;
         } else if (pa.display === 'fake_display') {
           sumEl.className = 'text-[11px] font-bold text-rose-700';
-          sumEl.textContent = '✕ พบจอเทียบ / จอปลอม LCD (หัก -฿2,800 · จำกัดสูงสุด Grade C)';
+          sumEl.textContent = '✕ จอเทียบ / จอปลอม LCD ชัดเจน (หัก -฿2,800 · สูงสุด Grade C)';
         } else if (pa.display === 'ic_swapped') {
           sumEl.className = 'text-[11px] font-bold text-amber-800';
-          sumEl.textContent = '⚠️ พบสัญญาณจอย้าย IC / ขอบจอนูน / ALS หาย (หัก -฿1,800 · จำกัดสูงสุด Grade C)';
-        } else if (hasAnomaly) {
-          sumEl.className = 'text-[11px] font-bold text-amber-700';
-          sumEl.textContent = 'พบอะไหล่เทียบ (แบต/กล้อง) — หักลดในใบรายงานอัตโนมัติ';
-        } else if (pa.display === 'genuine_replaced') {
+          sumEl.textContent = '⚠️ จอเปลี่ยนมา / ไม่ยืนยันแท้ Unknown (หัก -฿1,800 · สูงสุด Grade C)';
+        } else if (pa.battery === 'unknown_part') {
+          sumEl.className = 'text-[11px] font-bold text-amber-800';
+          sumEl.textContent = '⚠️ แบตเปลี่ยนมา / ไม่รู้แท้-ปลอม Unknown (หัก -฿1,200 · สูงสุด Grade B)';
+        } else if (pa.camera === 'unknown_part') {
+          sumEl.className = 'text-[11px] font-bold text-amber-800';
+          sumEl.textContent = '⚠️ กล้องเทียบ / Unknown Camera (หัก -฿1,500 · สูงสุด Grade C)';
+        } else if (isGenuineReplaced) {
           sumEl.className = 'text-[11px] font-bold text-teal-700';
-          sumEl.textContent = '● เคยเปลี่ยนจอแท้ศูนย์ (Genuine Part — ผ่านเกณฑ์)';
+          sumEl.textContent = '● เปลี่ยนอะไหล่แท้ศูนย์ (Genuine Part — ไม่หักค่าอะไหล่ · สูงสุด Grade A)';
         } else {
           sumEl.className = 'text-[11px] font-bold text-emerald-700';
-          sumEl.textContent = '✓ จอแท้เดิมโรงงาน ผ่านครบทั้ง 3 ขั้นตอน';
+          sumEl.textContent = '✓ จอแท้ & แบตแท้เดิมโรงงาน ครบทุกข้อ (สูงสุด Grade A+)';
         }
       }
 
       if (missing === 0) {
-        unlockCurrentStepPass(hasAnomaly ? 'บันทึกจุดสังเกตหน้าจอแล้ว' : 'จอแท้ผ่านครบ 3 ขั้นตอน');
+        unlockCurrentStepPass(isAnyUnknown ? 'บันทึกสถานะอะไหล่แล้ว' : 'จอ & แบตผ่านเกณฑ์');
       }
     }
 
@@ -4201,20 +4212,17 @@
     function confirmPartsAuthenticityStep() {
       updateQuickScreenSummary();
       const pa = state.partsAudit;
-      const missing = [!pa.bezelChin, !pa.oledVerdict, !pa.sysVerdict].filter(Boolean).length;
+      const missing = [!pa.bezelChin, !pa.oledVerdict, !pa.sysVerdict, !pa.battery].filter(Boolean).length;
       if (missing > 0) {
-        showToast(`กรุณาแตะเลือกผลตรวจหน้าจอให้ครบทั้ง 3 ขั้นตอน (เหลืออีก ${missing} ข้อ)`);
+        showToast(`กรุณาแตะเลือกผลตรวจให้ครบทั้ง 4 ข้อ (เหลืออีก ${missing} ข้อ)`);
         return;
       }
-      const hasAnomaly =
-        pa.display === 'fake_display' ||
-        pa.display === 'ic_swapped' ||
-        pa.battery === 'unknown_part' ||
-        pa.camera === 'unknown_part';
-      if (hasAnomaly) {
+      const isDisplayOrCamBad = (pa.display === 'fake_display' || pa.display === 'ic_swapped' || pa.camera === 'unknown_part');
+      if (isDisplayOrCamBad) {
         markCurrentTest('fail');
       } else {
-        unlockCurrentStepPass('จอแท้ผ่านครบ 3 ขั้นตอน');
+        // Unknown battery caps at Grade B (-1,200) inside calculateGrade() without adding an extra -1,000 hardware fail penalty!
+        unlockCurrentStepPass(pa.battery === 'unknown_part' ? 'แบต Unknown (จำกัดสูงสุด B)' : 'จอ & แบตผ่านเกณฑ์');
         markCurrentTest('pass');
       }
     }
@@ -4554,58 +4562,76 @@
         };
       }
 
-      // Grade C (Fair — Heavy scratch, dented corners, battery <80%, non-genuine parts, or 1-2 hardware fails)
-      if (failCount > 0 || state.cosmetics.screen === 'heavy_scratch' || state.cosmetics.body === 'dented' || bh < 80 || state.cosmetics.parts === 'non_genuine') {
+      const isDisplayOrCamUnknown =
+        pa.display === 'fake_display' ||
+        pa.display === 'ic_swapped' ||
+        pa.autoBrightness === 'missing_or_no_react' ||
+        pa.bezelChin === 'thick_or_raised' ||
+        pa.camera === 'unknown_part';
+      const isBatteryUnknown = pa.battery === 'unknown_part';
+      const isGenuineReplaced =
+        pa.display === 'genuine_replaced' ||
+        pa.battery === 'genuine_replaced' ||
+        pa.camera === 'genuine_replaced';
+
+      // Grade C (Fair — Heavy scratch, dented corners, battery <80%, unknown/fake display or camera, or 1-2 hardware fails)
+      if (failCount > 0 || state.cosmetics.screen === 'heavy_scratch' || state.cosmetics.body === 'dented' || bh < 80 || isDisplayOrCamUnknown || (state.cosmetics.parts === 'non_genuine' && !isBatteryUnknown)) {
         return {
           grade: 'GRADE C',
-          tierName: 'Fair (มีรอยชัด / แบตต่ำกว่า 80%)',
+          tierName: 'Fair (มีรอยชัด / จอเปลี่ยนไม่ยืนยัน / แบต <80%)',
           color: 'bg-amber-500',
           mult: 0.70,
           storageAdj,
           deductions,
           totalDeduct,
-          reason: 'มีรอยลึก/รอยบุบ อะไหล่เทียบ แบตต่ำกว่า 80% หรือพบจุดเสีย 1–2 ข้อ'
+          reason: isDisplayOrCamUnknown
+            ? 'จอเปลี่ยนมา/ไม่ยืนยันแท้ (Unknown) หรือจอเทียบ (จำกัดสูงสุด Grade C)'
+            : 'มีรอยลึก/รอยบุบ แบตต่ำกว่า 80% หรือพบจุดเสีย 1–2 ข้อ'
         };
       }
 
-      // Grade B (Good — Swappa/Back Market Good: micro-scratches invisible at 50cm, battery 80-84%)
-      if (state.cosmetics.screen === 'minor_scratch' || state.cosmetics.body === 'minor_wear' || bh < 85) {
+      // Grade B (Good — micro-scratches, battery 80-84%, OR Unknown/Unverified Battery replacement)
+      if (state.cosmetics.screen === 'minor_scratch' || state.cosmetics.body === 'minor_wear' || bh < 85 || isBatteryUnknown) {
         return {
           grade: 'GRADE B',
-          tierName: 'Good (รอยขนแมวระยะ 50 ซม. / แบต 80%+)',
+          tierName: isBatteryUnknown ? 'Good (แบตเปลี่ยนมา / Unknown · สูงสุด B)' : 'Good (รอยขนแมวระยะ 50 ซม. / แบต 80%+)',
           color: 'bg-slate-900',
           mult: 0.86,
           storageAdj,
           deductions,
           totalDeduct,
-          reason: 'ฮาร์ดแวร์สมบูรณ์ 100% มีรอยขนแมวตื้นหรือแบต 80–84%'
+          reason: isBatteryUnknown
+            ? 'แบตเตอรี่เปลี่ยนมา/ไม่ยืนยันแท้ (Unknown Part — จำกัดสูงสุด Grade B · หัก -฿1,200)'
+            : 'ฮาร์ดแวร์สมบูรณ์ 100% มีรอยขนแมวตื้นหรือแบต 80–84%'
         };
       }
 
-      // Grade A+ (Mint / Premium — Back Market Premium: Flawless + Genuine 100% + Battery >= 90%)
-      if (bh >= 90 && state.cosmetics.parts === 'genuine') {
+      // Grade A+ (Mint / Premium — Flawless + Factory-Original Unopened Parts + Battery >= 90%)
+      if (bh >= 90 && state.cosmetics.parts === 'genuine' && !isGenuineReplaced) {
         return {
           grade: 'GRADE A+',
-          tierName: 'Mint / Premium (สมบูรณ์สูงสุด · แบต 90%+)',
+          tierName: 'Mint / Premium (เดิมโรงงานสมบูรณ์สูงสุด · แบต 90%+)',
           color: 'bg-emerald-600',
           mult: 1.03,
           storageAdj,
           deductions,
           totalDeduct,
-          reason: `สวยไร้รอย อะไหล่แท้ 100% แบต ${bh}% (${passCount}/${DIAGNOSTIC_ITEMS.length})`
+          reason: `สวยไร้รอย เดิมโรงงานไม่เคยแกะ แบต ${bh}% (${passCount}/${DIAGNOSTIC_ITEMS.length})`
         };
       }
 
-      // Grade A (Excellent — CompAsia Thailand / Back Market Excellent: Flawless screen, body invisible at 20cm, battery 85-89%)
+      // Grade A (Excellent — Flawless with battery 85-89%, OR Genuine Apple/Center-Replaced Parts capped at Grade A)
       return {
         grade: 'GRADE A',
-        tierName: 'Excellent (ไร้รอยระยะ 20 ซม. · แบต 85%+)',
+        tierName: isGenuineReplaced ? 'Excellent (เปลี่ยนอะไหล่แท้ศูนย์ · สูงสุด A)' : 'Excellent (ไร้รอยระยะ 20 ซม. · แบต 85%+)',
         color: 'bg-emerald-600',
         mult: 1.0,
         storageAdj,
         deductions,
         totalDeduct,
-        reason: `ปกติสมบูรณ์ อะไหล่แท้ แบต ${bh}% (${passCount}/${DIAGNOSTIC_ITEMS.length})`
+        reason: isGenuineReplaced
+          ? `เคยเปลี่ยนอะไหล่แท้ศูนย์ (Genuine Part — ไม่หักค่าอะไหล่ · จำกัดสูงสุด Grade A) · แบต ${bh}%`
+          : `ปกติสมบูรณ์ อะไหล่แท้ แบต ${bh}% (${passCount}/${DIAGNOSTIC_ITEMS.length})`
       };
     }
 

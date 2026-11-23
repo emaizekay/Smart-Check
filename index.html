@@ -1690,6 +1690,9 @@
       micSustainedTicks: 0,
       liveCapacityPrices: {},
       livePriceMeta: { updatedAt: '', updatedYear: 2026, liveLoaded: false },
+      rearCamLenses: { ultrawide: '', main: '', tele: '', macro: '' },
+      rearCamDevices: [],
+      activeRearDeviceId: '',
       sensorSub: { proximity: '', gyro: '' },
       sensorHitLeft: false,
       sensorHitRight: false,
@@ -2652,39 +2655,38 @@
         `;
       } else if (item.id === 'screen_rgb') {
         const colors = [
-          { name: 'สีแดง (Red) - ดูตัวเลขมุมซ้ายบน', hex: '#EF4444', text: 'text-white', pos: 'top-2 left-3' },
-          { name: 'สีเขียว (Green) - ดูตัวเลขมุมขวาบน', hex: '#22C55E', text: 'text-white', pos: 'top-2 right-3' },
-          { name: 'สีน้ำเงิน (Blue) - ดูตัวเลขมุมซ้ายล่าง', hex: '#3B82F6', text: 'text-white', pos: 'bottom-2 left-3' },
-          { name: 'สีขาว (White) - ดูตัวเลขมุมขวาล่าง', hex: '#FFFFFF', text: 'text-slate-900', pos: 'bottom-2 right-3' },
-          { name: 'สีดำสนิท (Black) - ตรวจแสงรั่ว', hex: '#0F172A', text: 'text-white', pos: 'top-2 left-1/2' }
+          { name: 'สีแดง (Red) — เช็กจุดสีตาย', hex: '#EF4444', text: 'text-white' },
+          { name: 'สีเขียว (Green) — เช็กจุดสีตาย', hex: '#22C55E', text: 'text-white' },
+          { name: 'สีน้ำเงิน (Blue) — เช็กจุดสีตาย', hex: '#3B82F6', text: 'text-white' },
+          { name: 'สีขาว (White) — เช็กจอเบิร์น / ขอบเหลือง', hex: '#FFFFFF', text: 'text-slate-900' },
+          { name: 'สีดำสนิท (Black) — เช็กแสงรั่ว OLED', hex: '#020202', text: 'text-white' }
         ];
         const cIdx = state.rgbColorIndex % 5;
         state.rgbSeenColors[cIdx] = true;
         const seen = Object.keys(state.rgbSeenColors).length;
         const cur = colors[cIdx];
-        const digit = state.rgbSecretPin[cIdx % 4];
         stage.innerHTML = `
           <div class="w-full max-w-xl space-y-3 text-center">
             <div class="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 flex flex-wrap items-center justify-between gap-2 text-xs text-left">
               <div>
-                <div class="font-extrabold text-indigo-950">โหมดแสดงสีเต็มหน้าจอ 100% (ตรวจ Dead Pixel / จอเบิร์น / แสงรั่วขอบจอ)</div>
-                <p class="text-[11px] text-slate-600">กดปุ่มแสดงสีเต็มหน้าจอเพื่อดูเม็ดพิกเซลถึงขอบจอทั้ง 4 มุม แล้วจำตัวเลข 4 หลักมากรอกยืนยัน</p>
+                <div class="font-extrabold text-indigo-950">ทดสอบสีหน้าจอเต็มจอ 5 สี (ไม่ต้องกรอกตัวเลข)</div>
+                <p class="text-[11px] text-slate-600">กดแสดงสีเต็มจอแล้วแตะไล่ดูให้ครบ 5 สี เพื่อตรวจ Dead Pixel, จอเบิร์น และแสงรั่วขอบจอ</p>
               </div>
-              <button type="button" onclick="openFullscreenRgbTest()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold shadow-sm whitespace-nowrap">
+              <button type="button" onclick="openFullscreenRgbTest()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-extrabold shadow-sm whitespace-nowrap">
                 ⛶ เปิดสีเต็มหน้าจอ 100%
               </button>
             </div>
-            <div onclick="cycleRgbColor()" style="background-color:${cur.hex};" class="relative w-full h-60 rounded-2xl border-2 border-slate-300 flex flex-col items-center justify-center cursor-pointer p-4 ${cur.text}">
-              <span class="absolute ${cur.pos} text-xs font-mono font-bold px-2 py-0.5 rounded border border-current">เลขมุมจอ: ${digit}</span>
+            <div onclick="cycleRgbColor()" style="background-color:${cur.hex};" class="relative w-full h-56 rounded-2xl border-2 border-slate-300 flex flex-col items-center justify-center cursor-pointer p-4 ${cur.text}">
               <div class="text-base font-extrabold">${cur.name}</div>
-              <div class="text-xs opacity-85 mt-1">แตะที่กรอบสีเพื่อสลับดูให้ครบ 5 สี (ดูแล้ว ${seen}/5 สี)</div>
+              <div class="text-xs opacity-85 mt-1">แตะที่กรอบสีเพื่อสลับดูสีถัดไป (ดูแล้ว ${seen}/5 สี)</div>
             </div>
-            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span>กรอกตัวเลข 4 หลักที่ปรากฏตามมุมของสีที่ 1–4 เพื่อยืนยันว่าจอแสดงผลปกติ:</span>
-              <div class="flex gap-2">
-                <input id="rgb-pin-input" type="text" maxlength="4" placeholder="เลข 4 หลัก" class="w-24 rounded-lg border border-slate-300 px-2 py-1 font-mono font-bold text-center" />
-                <button onclick="verifyRgbPin()" class="px-3.5 py-1.5 rounded-lg bg-blue-600 text-white font-bold">ยืนยัน</button>
-              </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <button type="button" onclick="confirmRgbColorTest('pass')" class="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold shadow-sm">
+                ✓ สีจอปกติ ครบ 5 สี (ไร้เดดพิกเซล / จอเบิร์น)
+              </button>
+              <button type="button" onclick="confirmRgbColorTest('fail')" class="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 font-bold shadow-sm">
+                ✕ พบจุดสีตาย / จอเบิร์น / แสงรั่ว
+              </button>
             </div>
           </div>
         `;
@@ -2719,22 +2721,69 @@
         `;
       } else if (item.id === 'front_cam' || item.id === 'rear_cam') {
         const isFront = item.id === 'front_cam';
+        const lenses = state.rearCamLenses || { ultrawide: '', main: '', tele: '', macro: '' };
+        const pillCls = (val) => val === 'pass'
+          ? 'bg-[#D4E9D8] text-[#143A26] border-2 border-[#5EA874] font-extrabold'
+          : val === 'fail'
+            ? 'bg-[#F6CBD5] text-[#5C192D] border-2 border-[#D46A87] font-extrabold'
+            : val === 'skip'
+              ? 'bg-[#FFF0CA] text-[#4A2B0F] border-2 border-[#D4A054] font-bold'
+              : 'bg-white text-[#1E2433] border border-slate-300 font-semibold';
         stage.innerHTML = `
-          <div class="max-w-md w-full text-center space-y-3 p-2">
+          <div class="max-w-lg w-full text-center space-y-3 p-2">
             <div class="relative w-full h-56 bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center border border-slate-300">
-              <video id="cam-video" autoplay playsinline muted class="w-full h-full object-cover hidden"></video>
+              <video id="cam-video" autoplay playsinline muted class="w-full h-full object-cover hidden transition-transform duration-150"></video>
+              <span id="cam-active-lens-badge" class="hidden absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-black/70 text-white text-[11px] font-bold">1x Main</span>
               <div id="cam-placeholder" class="text-slate-300 text-xs p-4 space-y-1">
                 <div class="w-12 h-12 mx-auto rounded-full bg-white/10 flex items-center justify-center">${isFront ? PIXEL_DIAG_SVGS.front_cam : PIXEL_DIAG_SVGS.rear_cam}</div>
-                <div>กดปุ่มเปิดกล้องด้านล่างเพื่อให้ระบบตรวจสอบสัญญาณภาพสด</div>
+                <div>${isFront ? 'กดปุ่มเปิดกล้องหน้าเพื่อตรวจสัญญาณภาพสด' : 'กดเปิดกล้องหลังแล้วสลับตรวจให้ครบทุกระยะเลนส์ (0.5x / 1x / 2x-5x / มาโคร)'}</div>
               </div>
             </div>
-            <div class="flex justify-center gap-2">
-              <button onclick="startRealCamera('${isFront ? 'user' : 'environment'}')" class="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold">
+
+            ${!isFront ? `
+            <!-- Multi-Lens / Focal Length Controls -->
+            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 text-left text-xs">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="font-extrabold text-[#162944]">สลับระยะเลนส์กล้องหลัง (ตรวจครบทุกระยะ)</span>
+                <div id="cam-hw-lens-list" class="flex flex-wrap gap-1"></div>
+              </div>
+              <div class="grid grid-cols-4 gap-1.5">
+                <button type="button" onclick="switchRearCameraZoom('ultrawide', 0.5, '0.5x Ultra-Wide')" class="py-2 px-1.5 rounded-xl text-[11px] ${pillCls(lenses.ultrawide)}">0.5x กว้าง</button>
+                <button type="button" onclick="switchRearCameraZoom('main', 1, '1x Main Wide')" class="py-2 px-1.5 rounded-xl text-[11px] ${pillCls(lenses.main)}">1x หลัก</button>
+                <button type="button" onclick="switchRearCameraZoom('tele', 3, '3x Telephoto')" class="py-2 px-1.5 rounded-xl text-[11px] ${pillCls(lenses.tele)}">2x–5x ซูม</button>
+                <button type="button" onclick="switchRearCameraZoom('macro', 2, 'Macro / โฟกัสใกล้')" class="py-2 px-1.5 rounded-xl text-[11px] ${pillCls(lenses.macro)}">มาโคร/ใกล้</button>
+              </div>
+              <div id="cam-zoom-hint" class="text-[11px] text-slate-600">
+                แตะเปิดกล้องก่อน แล้วกดสลับทุกระยะที่เครื่องมี เพื่อเช็กโฟกัส, OIS กันสั่น และฝุ่นในเลนส์ (รุ่นที่ไม่มีเลนส์ซูม/อัลตร้าไวด์ กดข้ามระยะนั้นได้)
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1 text-[10px]">
+                ${[
+                  ['ultrawide', '0.5x'],
+                  ['main', '1x หลัก'],
+                  ['tele', 'Tele ซูม'],
+                  ['macro', 'มาโคร']
+                ].map(([k, lbl]) => `
+                  <div class="p-1.5 rounded-lg bg-white border border-slate-200 flex items-center justify-between gap-1">
+                    <span class="font-bold text-slate-700">${lbl}</span>
+                    <div class="flex gap-1">
+                      <button type="button" onclick="setRearLensStatus('${k}','pass')" class="px-1.5 py-0.5 rounded ${lenses[k]==='pass'?'bg-[#D4E9D8] text-[#143A26] font-extrabold':'bg-slate-100 text-slate-600'}">✓</button>
+                      <button type="button" onclick="setRearLensStatus('${k}','fail')" class="px-1.5 py-0.5 rounded ${lenses[k]==='fail'?'bg-[#F6CBD5] text-[#5C192D] font-extrabold':'bg-slate-100 text-slate-600'}">✕</button>
+                      ${k !== 'main' ? `<button type="button" onclick="setRearLensStatus('${k}','skip')" class="px-1 py-0.5 rounded ${lenses[k]==='skip'?'bg-[#FFF0CA] text-[#4A2B0F] font-bold':'bg-slate-100 text-slate-500'}">-</button>` : ''}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            ` : ''}
+
+            <div class="flex flex-wrap justify-center gap-2">
+              <button type="button" onclick="startRealCamera('${isFront ? 'user' : 'environment'}')" class="px-4 py-2.5 rounded-xl bg-blue-600 text-xs font-bold shadow-sm">
                 📷 1. เปิดกล้องจริง
               </button>
-              <button id="btn-cam-verify" onclick="verifyCameraPixels()" disabled class="px-4 py-2.5 rounded-xl bg-slate-200 text-slate-500 text-xs font-bold cursor-not-allowed">
-                🔍 2. ยืนยันสัญญาณภาพจากเซนเซอร์
+              <button id="btn-cam-verify" type="button" onclick="${isFront ? 'verifyCameraPixels()' : 'confirmRearCameraMultiLens()'}" ${isFront ? 'disabled' : ''} class="px-4 py-2.5 rounded-xl ${isFront ? 'bg-slate-200 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 cursor-pointer'} text-xs font-bold shadow-sm">
+                ${isFront ? '✓ 2. ยืนยันกล้องหน้าปกติ' : '✓ 2. ยืนยันผลกล้องหลังครบทุกระยะ'}
               </button>
+              ${!isFront ? `<button type="button" onclick="markCurrentTest('fail')" class="px-3.5 py-2.5 rounded-xl bg-rose-600 text-xs font-bold shadow-sm">✕ กล้องหลังมีปัญหา</button>` : ''}
             </div>
           </div>
         `;
@@ -3150,17 +3199,7 @@
     }
 
     function verifyRgbPin() {
-      if (Object.keys(state.rgbSeenColors).length < 5) {
-        showToast('กรุณาแตะสลับดูสีหน้าจอให้ครบทั้ง 5 สีก่อนครับ', '🎨');
-        return;
-      }
-      const inp = document.getElementById('rgb-pin-input');
-      if (inp && inp.value.trim() === state.rgbSecretPin) {
-        unlockCurrentStepPass('ครบ 5 สี');
-        markCurrentTest('pass');
-      } else {
-        showToast('ตัวเลขไม่ตรงกับมุมจอ กรุณาตรวจสอบอีกครั้ง', '✕');
-      }
+      confirmRgbColorTest('pass');
     }
 
     // Synthesizes a real 16-bit PCM WAV Blob URL so HTML5 <audio> plays on iOS Media Playback channel
@@ -3312,13 +3351,20 @@
       }, 120);
     }
 
-    function startRealCamera(mode) {
+    function startRealCamera(mode, deviceId, lensLabel) {
       stopActiveMedia();
       const video = document.getElementById('cam-video');
       const ph = document.getElementById('cam-placeholder');
       const vBtn = document.getElementById('btn-cam-verify');
+      const videoConstraint = deviceId ? { deviceId: { exact: deviceId } } : { facingMode: mode };
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }).then(stream => {
+        navigator.mediaDevices.getUserMedia({ video: videoConstraint }).then(stream => {
+          state.activeRearDeviceId = deviceId || '';
+          if (mode === 'environment') {
+            populateRearHardwareLenses();
+            const badge = document.getElementById('cam-active-lens-badge');
+            if (badge) { badge.classList.remove('hidden'); badge.textContent = lensLabel || '1x Main Wide'; }
+          }
           state.activeStream = stream;
           if (video) {
             video.srcObject = stream;
@@ -3351,6 +3397,100 @@
         vBtn.className = 'px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer';
       }
       unlockCurrentStepPass('Camera Ready');
+    }
+
+    function confirmRgbColorTest(result) {
+      if (result === 'pass') {
+        unlockCurrentStepPass('สีหน้าจอปกติครบ 5 สี');
+        markCurrentTest('pass');
+      } else {
+        markCurrentTest('fail');
+      }
+    }
+
+    async function populateRearHardwareLenses() {
+      const box = document.getElementById('cam-hw-lens-list');
+      if (!box || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+      try {
+        const devs = await navigator.mediaDevices.enumerateDevices();
+        const rearCams = devs.filter(d => d.kind === 'videoinput' && !/front|user|facetime/i.test(d.label || ''));
+        state.rearCamDevices = rearCams;
+        if (rearCams.length > 1) {
+          box.innerHTML = rearCams.map((d, idx) => {
+            const shortLbl = (d.label || `เลนส์ ${idx + 1}`).replace(/camera2?\s*\d*,?\s*/i, '').slice(0, 18);
+            return `<button type="button" onclick="startRealCamera('environment', '${d.deviceId}')" class="px-2 py-0.5 rounded-lg bg-white border border-slate-300 text-[10px] font-bold text-[#162944] hover:bg-blue-50">เลนส์ ${idx + 1}: ${shortLbl || 'Rear'}</button>`;
+          }).join('');
+        }
+      } catch (e) {}
+    }
+
+    async function switchRearCameraZoom(lensKey, zoomFactor, label) {
+      const video = document.getElementById('cam-video');
+      const badge = document.getElementById('cam-active-lens-badge');
+      const hint = document.getElementById('cam-zoom-hint');
+      if (!state.activeStream) {
+        await startRealCamera('environment');
+      }
+      if (badge) {
+        badge.classList.remove('hidden');
+        badge.textContent = label;
+      }
+      let appliedHwZoom = false;
+      if (state.activeStream) {
+        const track = state.activeStream.getVideoTracks()[0];
+        if (track && typeof track.getCapabilities === 'function') {
+          const caps = track.getCapabilities();
+          if (caps && caps.zoom) {
+            const clamped = Math.max(caps.zoom.min, Math.min(caps.zoom.max, zoomFactor));
+            try {
+              await track.applyConstraints({ advanced: [{ zoom: clamped }] });
+              appliedHwZoom = true;
+              if (hint) hint.textContent = `กำลังแสดงระยะ ${label} (Hardware Zoom ${clamped.toFixed(1)}x · ช่วงรองรับ ${caps.zoom.min}x–${caps.zoom.max}x)`;
+            } catch (e) {}
+          }
+        }
+        // If browser exposes distinct rear deviceIds (e.g. iOS Safari / Android Chrome ultra-wide & tele), try matching by label
+        if (!appliedHwZoom && state.rearCamDevices && state.rearCamDevices.length > 1) {
+          const matchPat = lensKey === 'ultrawide' ? /ultra|wide\s*0\.5|back\s*ultra/i
+            : lensKey === 'tele' ? /tele|zoom/i
+            : /back\s*camera|wide|main/i;
+          const found = state.rearCamDevices.find(d => matchPat.test(d.label || ''));
+          if (found && found.deviceId && found.deviceId !== state.activeRearDeviceId) {
+            startRealCamera('environment', found.deviceId, label);
+            appliedHwZoom = true;
+          }
+        }
+      }
+      if (!appliedHwZoom && video) {
+        const cssScale = zoomFactor > 1 ? Math.min(2.6, zoomFactor) : 1;
+        video.style.transform = `scale(${cssScale})`;
+        if (hint) hint.textContent = `ระยะ ${label} (หากเบราว์เซอร์ไม่เปิดสวิตช์เลนส์ตรง ให้ทดสอบซูมในแอปกล้องของเครื่องประกอบด้วย แล้วกด ✓ / ✕ ด้านล่าง)`;
+      } else if (video) {
+        video.style.transform = 'scale(1)';
+      }
+      if (!state.rearCamLenses[lensKey]) {
+        state.rearCamLenses[lensKey] = 'pass';
+      }
+    }
+
+    function setRearLensStatus(lensKey, status) {
+      if (!state.rearCamLenses) state.rearCamLenses = { ultrawide: '', main: '', tele: '', macro: '' };
+      state.rearCamLenses[lensKey] = status;
+      renderRunnerStage();
+    }
+
+    function confirmRearCameraMultiLens() {
+      const l = state.rearCamLenses || {};
+      if (l.ultrawide === 'fail' || l.main === 'fail' || l.tele === 'fail' || l.macro === 'fail') {
+        markCurrentTest('fail');
+        return;
+      }
+      if (!l.main && !state.activeStream && !state.cameraFallbackReady) {
+        showToast('กรุณาเปิดกล้องและแตะตรวจอย่างน้อยระยะ 1x หลักก่อนยืนยัน');
+        return;
+      }
+      unlockCurrentStepPass('กล้องหลังผ่านครบทุกระยะที่ตรวจ');
+      markCurrentTest('pass');
     }
 
     function verifyCameraPixels() {
@@ -3743,10 +3883,7 @@
       if (seenBefore >= 5 && (state.rgbColorIndex % 5) === 4) {
         // After viewing the 5th color (Black), tapping again automatically returns to enter the 4-digit PIN!
         closeFullscreenOverlay();
-        setTimeout(() => {
-          const pinInp = document.getElementById('rgb-pin-input');
-          if (pinInp) pinInp.focus();
-        }, 120);
+        unlockCurrentStepPass('ตรวจสอบสีหน้าจอครบ 5 สีแล้ว');
         return;
       }
       state.rgbColorIndex++;
@@ -6151,12 +6288,95 @@ function fetchAppleSupportModelsFromUrl(targetUrl) {
 
     setTimeout(checkUsbStationHealth, 600);
 
+    // --- AI Agent / Host System Plug-in Bridge (window.SmartCheckAPI + postMessage) ---
+    window.SmartCheckAPI = {
+      version: '3.0',
+      getFullPayload: function() {
+        const g = (typeof calculateGrade === 'function') ? calculateGrade() : { grade: '-', tierName: '-', totalDeduct: 0, deductions: [], mult: 1, storageAdj: 0 };
+        const baseVal = state.prices.remobie || 0;
+        const recPrice = baseVal > 0 ? Math.max(500, Math.round((baseVal + (g.storageAdj || 0)) * getTimeDepreciationFactor() * g.mult) - (g.totalDeduct || 0)) : 0;
+        return {
+          schemaVersion: '3.0',
+          timestamp: new Date().toISOString(),
+          device: {
+            brand: state.brand || '',
+            model: state.modelName || '',
+            ram: state.ram || '',
+            storage: state.storage || '',
+            color: state.deviceColor || '',
+            imei: state.imei || ''
+          },
+          diagnostics: {
+            results: Object.assign({}, state.results),
+            sensorSub: Object.assign({}, state.sensorSub || {}),
+            rearCameraLenses: Object.assign({}, state.rearCamLenses || {})
+          },
+          partsAudit: Object.assign({}, state.partsAudit || {}),
+          cosmetics: Object.assign({}, state.cosmetics || {}),
+          valuation: {
+            grade: g.grade,
+            tierName: g.tierName,
+            recommendedPriceThb: recPrice,
+            totalDeductionThb: g.totalDeduct || 0,
+            deductions: g.deductions || [],
+            priceSource: (state.livePriceMeta && state.livePriceMeta.liveLoaded) ? 'live_prices.json (Studio7/BaNANA)' : 'embedded_thai_baseline',
+            priceUpdatedAt: (state.livePriceMeta && state.livePriceMeta.updatedAt) || ''
+          },
+          usbStationReport: state.usbStationReport || null
+        };
+      },
+      emitResultToHost: function(eventType) {
+        const payload = this.getFullPayload();
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ source: 'SMARTCHECK_PRO', type: eventType || 'SMARTCHECK_RESULT', payload }, '*');
+          }
+          if (window.opener) {
+            window.opener.postMessage({ source: 'SMARTCHECK_PRO', type: eventType || 'SMARTCHECK_RESULT', payload }, '*');
+          }
+        } catch (e) {}
+        return payload;
+      }
+    };
+
+    function applyHostPrefillParams() {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('brand')) {
+        const bSel = document.getElementById('select-brand');
+        if (bSel) { bSel.value = p.get('brand'); handleBrandChange(); }
+      }
+      if (p.get('model')) {
+        const mSel = document.getElementById('input-model');
+        if (mSel) {
+          const t = p.get('model').toLowerCase();
+          const opt = Array.from(mSel.options).find(o => o.value.toLowerCase() === t || o.text.toLowerCase().includes(t));
+          if (opt) { mSel.value = opt.value; handleModelChange(); }
+        }
+      }
+      if (p.get('storage')) {
+        const sSel = document.getElementById('input-storage');
+        if (sSel) sSel.value = p.get('storage');
+      }
+      if (p.get('imei')) {
+        const iInp = document.getElementById('input-imei');
+        if (iInp) { iInp.value = p.get('imei'); if (typeof handleImeiOrSnInput === 'function') handleImeiOrSnInput(iInp.value); }
+      }
+      if (p.get('color')) {
+        const cInp = document.getElementById('input-device-color');
+        if (cInp) cInp.value = p.get('color');
+      }
+      if (p.get('brand') || p.get('model') || p.get('imei')) {
+        updateDeviceSelection();
+      }
+    }
+
     window.onload = async function() {
       loadSavedCatalogFromStorage();
       loadSheetsConfigAndHistory();
       handleBrandChange();
       renderHomeLauncherQr();
       await autoSyncLatestCatalogAndPrices(true);
+      applyHostPrefillParams();
       await runAutoDeviceDetection();
       renderDashboardGrid();
       refreshSamplePhotos();
